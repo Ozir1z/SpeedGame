@@ -2,13 +2,12 @@
 
 
 #include "SpeedGameGameModeBase.h"
-//#include "SpeedSaveGame.h"
+#include "SpeedSaveGame.h"
+#include "SpeedSaveGame.h"
 
 ASpeedGameGameModeBase::ASpeedGameGameModeBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
-//	SpeedSaveGame = USpeedSaveGame();
 }
 
 void ASpeedGameGameModeBase::BeginPlay()
@@ -56,9 +55,10 @@ void ASpeedGameGameModeBase::UpdateTimer(float deltaSeconds)
 void ASpeedGameGameModeBase::StopGame()
 {
 	IsTimerGoing = false;// make enum?
-
 	//getHighscore and show highscore UI and check if player has highscore
-
+	USpeedSaveGame* speedSaveGame = SpeedSaveGame.GetDefaultObject();
+	speedSaveGame->AddHighScore(9, FHighScoreData(TEXT("Test"), Timer));
+	speedSaveGame->GetHighScores();
 }
 
 void ASpeedGameGameModeBase::StartGame()

@@ -26,7 +26,8 @@ public:
 	void StopGame();
 	void StartGame();
 
-//	class USpeedSaveGame* SpeedSaveGame;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SpeedGame | SaveGame" )
+	TSubclassOf<class USpeedSaveGame> SpeedSaveGame;
 
 protected:
 	virtual void BeginPlay() override;
