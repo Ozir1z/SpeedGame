@@ -83,7 +83,7 @@ void ASpeedVehiclePawn::HandleVehicleSpeed()
 {
 	ASpeedGameGameModeBase* gameMode = (ASpeedGameGameModeBase*)GetWorld()->GetAuthGameMode();
 
-	int64 speed = static_cast<int64>(GetVehicleMovementComponent()->GetForwardSpeedMPH());
+	int speed = static_cast<int>(GetVehicleMovementComponent()->GetForwardSpeedMPH());
 	if (speed <= 0) // make a maxspeed variable in gamemode, so we can make difficulties if we want to
 		speed = 0;
 	if (speed >= 30 && CurrentBombStatus == BombStatus::Inactive)
@@ -93,8 +93,13 @@ void ASpeedVehiclePawn::HandleVehicleSpeed()
 		CurrentBombStatus = BombStatus::Explodeded;
 		Death();
 	}
+	if (CurrentBombStatus == BombStatus::Explodeded)
+	{
+		speed = 0;
+		gameMode->StopGame();
+	}
 
-	gameMode->ShowCurrentSpeed(speed);
+	gameMode->UpdateSpeed(speed);
 }
 
 void ASpeedVehiclePawn::Death()

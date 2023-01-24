@@ -15,26 +15,36 @@ class SPEEDGAME_API ASpeedGameGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 
+	ASpeedGameGameModeBase();
 public:
-	UFUNCTION(BlueprintCallable, Category = "SpeedGame UMG")
+	UFUNCTION(BlueprintCallable, Category = "SpeedGame | UMG")
 	void ChangeMenuWidget(TSubclassOf<UUserWidget> NewWidgetClass);
 
-	void ShowCurrentSpeed(int64 speed);
+	void UpdateSpeed(int speed);
+	void UpdateTimer(float deltaSeconds);
 
+	void StopGame();
+	void StartGame();
 
+//	class USpeedSaveGame* SpeedSaveGame;
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SpeedGame UMG")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SpeedGame | UMG")
 	TSubclassOf<UUserWidget> StartingWidgetClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SpeedGame UMG")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SpeedGame | UMG")
 	UUserWidget* CurrentWidget;
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Speedgame MPH")
-	void ShowMPH(int64 speed);
+	UFUNCTION(BlueprintImplementableEvent, Category = "Speedgame | UMG")
+	void UpdateSpeedOnUI(int speed);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Speedgame | UMG")
+	void UpdateTimnerOnUI(float speed);
 
 private:
-
+	bool IsTimerGoing = true; // make this false and call it when driving off starting platform
+	float Timer = 0;
 };
