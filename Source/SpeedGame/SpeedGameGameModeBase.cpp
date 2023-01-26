@@ -62,7 +62,6 @@ void ASpeedGameGameModeBase::StopGame()
 
 	IsTimerGoing = false;// make enum?
 	USpeedGameInstance* gameInstance = Cast<USpeedGameInstance>(GetWorld()->GetGameInstance());
-	//TArray<FHighScoreData> highscores = gameInstance->SaveGameObject->HighScores;
 	TArray<FHighScoreData> highscores = gameInstance->SaveGameObject->GetHighScores();
 
 	PlayerIndexToSetName = -1;
@@ -72,31 +71,12 @@ void ASpeedGameGameModeBase::StopGame()
 		{
 			PlayerIndexToSetName = i;
 			gameInstance->SaveGameObject->AddHighScore(PlayerIndexToSetName, FHighScoreData(TEXT(""), Timer));
-			//AddHighScore(PlayerIndexToSetName, FHighScoreData(TEXT(""), Timer));
 			break;
 		}
 	}
 
 	ASpeedGameGameModeBase::ShowHighScoresOnUI(gameInstance->SaveGameObject->HighScores, PlayerIndexToSetName);
 }
-
-//void ASpeedGameGameModeBase::AddHighScore(int index, FHighScoreData highScoreData)
-//{
-//	USpeedGameInstance* gameInstance = Cast<USpeedGameInstance>(GetWorld()->GetGameInstance());
-//	TArray<FHighScoreData> highScoreTemp = gameInstance->SaveGameObject->HighScores;
-//
-//	for (int i = 0; i < gameInstance->SaveGameObject->HighScores.Num(); i++)
-//	{
-//		if (index <= i && i < gameInstance->SaveGameObject->HighScores.Num()-1)
-//		{
-//			gameInstance->SaveGameObject->HighScores[i] = highScoreTemp[i + 1]; // move items on or higher on the list 1 up
-//		}
-//	}
-//	gameInstance->SaveGameObject->HighScores.Insert(highScoreData, index);
-//	
-//	if (gameInstance->SaveGameObject->HighScores.Num() > 10)
-//		gameInstance->SaveGameObject->HighScores.Pop();
-//}
 
 void ASpeedGameGameModeBase::StartGame()
 {
@@ -108,7 +88,6 @@ void ASpeedGameGameModeBase::AddHighScore(FString PlayerNameToSave)
 	if (PlayerIndexToSetName == -1)
 		return;
 
-	//AddHighScore(PlayerIndexToSetName, FHighScoreData(PlayerNameToSave, Timer));
 	USpeedGameInstance* gameInstance = Cast<USpeedGameInstance>(GetWorld()->GetGameInstance());
 	gameInstance->SaveGameObject->AddHighScore(PlayerIndexToSetName, FHighScoreData(PlayerNameToSave, Timer));
 	gameInstance->SaveGame();

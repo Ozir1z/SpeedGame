@@ -47,16 +47,9 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Speedgame | SaveGame")
 	void AddHighScore(FString PlayerNameToSave);
 
-	//UPROPERTY(BlueprintReadWrite)
-	//USpeedSaveGame* SaveGame;
-
 private:
 	bool IsTimerGoing = true; // make this false and call it when driving off starting platform
 	float Timer = 0;
 
-	const FString SaveName = "speedSaveGameSlot00";
-
 	int PlayerIndexToSetName;
-
-	void AddHighScore(int index, FHighScoreData highScoreData);
 };

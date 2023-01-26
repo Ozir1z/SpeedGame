@@ -54,23 +54,3 @@ void USpeedGameInstance::LogIfGameWasSavedOrNot(bool isSaved)
         UE_LOG(LogTemp, Warning, TEXT("Game was NOT saved succesfully"));
     }   
 }
-
-
-//void USpeedGameInstance::Init()
-//{
-//        SaveGameObject->HighScores.Init(FHighScoreData("test", 0), 10);
-//    //if (SaveGameObject->HighScores.IsEmpty())
-//    //{
-//        SaveGameObject->HighScores.Add(FHighScoreData(TEXT("xxUltImAtEbUssErxx"), 86400.f));
-//        SaveGameObject->HighScores.Add(FHighScoreData(TEXT("YoMaMa"), 36000.f));
-//        SaveGameObject->HighScores.Add(FHighScoreData(TEXT("HellBOI"), 18000.f));
-//        SaveGameObject->HighScores.Add(FHighScoreData(TEXT("SusAF"), 3600.f));
-//        SaveGameObject->HighScores.Add(FHighScoreData(TEXT("Bilbeau"), 1800.f));
-//
-//        SaveGameObject->HighScores.Add(FHighScoreData(TEXT("SLAYERr"), 900.f));
-//        SaveGameObject->HighScores.Add(FHighScoreData(TEXT("Bald"), 600.f));
-//        SaveGameObject->HighScores.Add(FHighScoreData(TEXT("FranK"), 300.f));
-//        SaveGameObject->HighScores.Add(FHighScoreData(TEXT("TTV_SweatyG4mer"), 60.f));
-//        SaveGameObject->HighScores.Add(FHighScoreData(TEXT("thisG4meSux"), 30.f));
-//    //}
-//}
