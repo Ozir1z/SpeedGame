@@ -3,21 +3,20 @@
 
 #include "SpeedGameGameModeBase.h"
 #include "SpeedSaveGame.h"
-#include <Kismet/GameplayStatics.h>
+#include "SpeedGameInstance.h"
 
 ASpeedGameGameModeBase::ASpeedGameGameModeBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	if (UGameplayStatics::DoesSaveGameExist(SaveName, 0))
-		SaveGame= UGameplayStatics::LoadGameFromSlot(SaveName, 0);
-	else
-		SaveGame = UGameplayStatics::CreateSaveGameObject(SpeedSaveGame);
-
 }
 
 void ASpeedGameGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	USpeedGameInstance* gameInstance = Cast<USpeedGameInstance>(GetWorld()->GetGameInstance());
+	gameInstance->LoadGame();
+
 	ChangeMenuWidget(StartingWidgetClass);
 }
 
@@ -59,42 +58,58 @@ void ASpeedGameGameModeBase::UpdateTimer(float deltaSeconds)
 
 void ASpeedGameGameModeBase::StopGame()
 {
-	if (IsTimerGoing)
-	{
-		USpeedSaveGame* speedSaveGame = SpeedSaveGame.GetDefaultObject();
-		TArray<FHighScoreData> highscores = speedSaveGame->GetHighScores();
-
-		PlayerIndexToSetName = -1;
-		for (int i= 0; i < highscores.Num(); i++)
-		{
-			if (Timer > highscores[i].Score && PlayerIndexToSetName == -1)
-			{
-				PlayerIndexToSetName = i;
-				highscores.Insert(FHighScoreData(TEXT(""), Timer), PlayerIndexToSetName);
-				highscores.Pop();
-				break;
-			}
-		}
-
-		ASpeedGameGameModeBase::ShowHighScoresOnUI(highscores, PlayerIndexToSetName);
-	}
+	if (!IsTimerGoing) return;
 
 	IsTimerGoing = false;// make enum?
+	USpeedGameInstance* gameInstance = Cast<USpeedGameInstance>(GetWorld()->GetGameInstance());
+	//TArray<FHighScoreData> highscores = gameInstance->SaveGameObject->HighScores;
+	TArray<FHighScoreData> highscores = gameInstance->SaveGameObject->GetHighScores();
+
+	PlayerIndexToSetName = -1;
+	for (int i= 0; i < highscores.Num(); i++)
+	{
+		if (Timer > highscores[i].Score && PlayerIndexToSetName == -1)
+		{
+			PlayerIndexToSetName = i;
+			gameInstance->SaveGameObject->AddHighScore(PlayerIndexToSetName, FHighScoreData(TEXT(""), Timer));
+			//AddHighScore(PlayerIndexToSetName, FHighScoreData(TEXT(""), Timer));
+			break;
+		}
+	}
+
+	ASpeedGameGameModeBase::ShowHighScoresOnUI(gameInstance->SaveGameObject->HighScores, PlayerIndexToSetName);
 }
+
+//void ASpeedGameGameModeBase::AddHighScore(int index, FHighScoreData highScoreData)
+//{
+//	USpeedGameInstance* gameInstance = Cast<USpeedGameInstance>(GetWorld()->GetGameInstance());
+//	TArray<FHighScoreData> highScoreTemp = gameInstance->SaveGameObject->HighScores;
+//
+//	for (int i = 0; i < gameInstance->SaveGameObject->HighScores.Num(); i++)
+//	{
+//		if (index <= i && i < gameInstance->SaveGameObject->HighScores.Num()-1)
+//		{
+//			gameInstance->SaveGameObject->HighScores[i] = highScoreTemp[i + 1]; // move items on or higher on the list 1 up
+//		}
+//	}
+//	gameInstance->SaveGameObject->HighScores.Insert(highScoreData, index);
+//	
+//	if (gameInstance->SaveGameObject->HighScores.Num() > 10)
+//		gameInstance->SaveGameObject->HighScores.Pop();
+//}
 
 void ASpeedGameGameModeBase::StartGame()
 {
 	IsTimerGoing = true;
 }
 
-
 void ASpeedGameGameModeBase::AddHighScore(FString PlayerNameToSave)
 {
 	if (PlayerIndexToSetName == -1)
 		return;
 
-	USpeedSaveGame* speedSaveGame = SpeedSaveGame.GetDefaultObject();
-	speedSaveGame->GetHighScores()[PlayerIndexToSetName].Name = PlayerNameToSave;
-
-	UGameplayStatics::SaveGameToSlot(SaveGame, SaveName, 0);
+	//AddHighScore(PlayerIndexToSetName, FHighScoreData(PlayerNameToSave, Timer));
+	USpeedGameInstance* gameInstance = Cast<USpeedGameInstance>(GetWorld()->GetGameInstance());
+	gameInstance->SaveGameObject->AddHighScore(PlayerIndexToSetName, FHighScoreData(PlayerNameToSave, Timer));
+	gameInstance->SaveGame();
 }

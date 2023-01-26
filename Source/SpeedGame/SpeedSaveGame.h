@@ -6,29 +6,10 @@
 #include "GameFramework/SaveGame.h"
 #include "SpeedSaveGame.generated.h"
 
-/**
- * 
- */
-UCLASS()
-class SPEEDGAME_API USpeedSaveGame : public USaveGame
-{
-	GENERATED_BODY()
-
-public:
-	USpeedSaveGame();
-
-	void AddHighScore(int index, FHighScoreData highScoreData);
-	TArray<FHighScoreData> GetHighScores();
-
-private:
-	TArray<FHighScoreData> HighScores;
-};
-
-
 USTRUCT(BlueprintType)
 struct FHighScoreData
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 
 	FHighScoreData() {
 
@@ -39,8 +20,28 @@ struct FHighScoreData
 		Score = score;
 	}
 
+
+public:
 	UPROPERTY(BlueprintReadOnly, Category = "Speed Game | HighScore")
 	FString Name;
 	UPROPERTY(BlueprintReadOnly, Category = "Speed Game | HighScore")
 	float Score;
+};
+
+
+UCLASS()
+class SPEEDGAME_API USpeedSaveGame : public USaveGame
+{
+	GENERATED_BODY()
+
+public:
+	USpeedSaveGame();
+
+	void Init();
+
+	void AddHighScore(int index, FHighScoreData highScoreData);
+	TArray<FHighScoreData> GetHighScores();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Highscores")
+	TArray<FHighScoreData> HighScores;
 };

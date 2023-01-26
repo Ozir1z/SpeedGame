@@ -35,9 +35,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Speedgame | UMG")
 	UUserWidget* CurrentWidget;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Speedgame | SaveGame")
-	TSubclassOf<class USpeedSaveGame> SpeedSaveGame;
-
 	UFUNCTION(BlueprintImplementableEvent, Category = "Speedgame | UMG")
 	void UpdateSpeedOnUI(int speed);
 
@@ -50,12 +47,16 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Speedgame | SaveGame")
 	void AddHighScore(FString PlayerNameToSave);
 
-	USaveGame* SaveGame;
+	//UPROPERTY(BlueprintReadWrite)
+	//USpeedSaveGame* SaveGame;
+
 private:
 	bool IsTimerGoing = true; // make this false and call it when driving off starting platform
 	float Timer = 0;
 
-	const FString SaveName = "SpeedSaveGameFile";
+	const FString SaveName = "speedSaveGameSlot00";
 
 	int PlayerIndexToSetName;
+
+	void AddHighScore(int index, FHighScoreData highScoreData);
 };

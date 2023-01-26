@@ -9,6 +9,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "SpeedGameGameModeBase.h"
+//#include "SpeedGameInstance.h"
 
 ASpeedVehiclePawn::ASpeedVehiclePawn()
 {
@@ -81,6 +82,7 @@ void ASpeedVehiclePawn::Tick(float DeltaTime)
 
 void ASpeedVehiclePawn::HandleVehicleSpeed()
 {
+	//USpeedGameInstance* gameInstance = Cast<USpeedGameInstance>(GetWorld()->GetGameInstance());
 	ASpeedGameGameModeBase* gameMode = (ASpeedGameGameModeBase*)GetWorld()->GetAuthGameMode();
 
 	int speed = static_cast<int>(GetVehicleMovementComponent()->GetForwardSpeedMPH());
