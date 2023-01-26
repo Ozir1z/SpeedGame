@@ -26,12 +26,12 @@ void AAIWheeledVehiclePawn::BeginPlay()
 void AAIWheeledVehiclePawn::Tick(float deltaSeconds)
 {
 	Super::Tick(deltaSeconds);
-	
-	SlowdownBehindVehicleAndChangeLane(deltaSeconds);
-	DriveInLane(deltaSeconds);
 
 	if (GetActorLocation().Z <= -10000)
 		Destroy();
+
+	SlowdownBehindVehicleAndChangeLane(deltaSeconds);
+	DriveInLane(deltaSeconds);
 }
 
 void AAIWheeledVehiclePawn::SetCurrentRoad(ARoadTile* currentRoadTile)
@@ -47,6 +47,9 @@ void AAIWheeledVehiclePawn::DriveInLane(float deltaSeconds)
 		UE_LOG(LogTemp, Display, TEXT("Current road doesn't exist"));
 		return;
 	}
+
+	if (GetCurrentaneSpline() == nullptr)
+		return;
 
 	float throttleInput = GetVehicleMovement()->GetForwardSpeedMPH() <= MaxSpeed ? 1 : 0;
 	GetVehicleMovement()->SetThrottleInput(throttleInput);
