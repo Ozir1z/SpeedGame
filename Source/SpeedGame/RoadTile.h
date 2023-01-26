@@ -58,7 +58,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	class USphereComponent* CustomRootComponent;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* RoadMeshComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

@@ -42,6 +42,6 @@ public:
 	void AddHighScore(int index, FHighScoreData highScoreData);
 	TArray<FHighScoreData> GetHighScores();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Highscores")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Speed Game | Highscores")
 	TArray<FHighScoreData> HighScores;
 };
