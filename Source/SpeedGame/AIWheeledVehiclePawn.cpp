@@ -42,14 +42,11 @@ void AAIWheeledVehiclePawn::SetCurrentRoad(ARoadTile* currentRoadTile)
 
 void AAIWheeledVehiclePawn::DriveInLane(float deltaSeconds)
 {
-	if (!CurrentRoadTile)
+	if (CurrentRoadTile == nullptr)
 	{
 		UE_LOG(LogTemp, Display, TEXT("Current road doesn't exist"));
 		return;
 	}
-
-	if (GetCurrentaneSpline() == nullptr)
-		return;
 
 	float throttleInput = GetVehicleMovement()->GetForwardSpeedMPH() <= MaxSpeed ? 1 : 0;
 	GetVehicleMovement()->SetThrottleInput(throttleInput);

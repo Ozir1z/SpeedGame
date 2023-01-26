@@ -121,6 +121,7 @@ void ARoadTile::SetCurrentRoadTileForVehicleOrDestroy(ARoadTile* roadTileToSet, 
 {
 	if (!roadTileToSet) // ROAD END SO BYE BYE
 	{
+		aiVehicle->SetCurrentRoad(nullptr);
 		aiVehicle->Destroy();
 		return;
 	}
