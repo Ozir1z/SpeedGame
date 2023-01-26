@@ -3,11 +3,16 @@
 
 #include "SpeedGameGameModeBase.h"
 #include "SpeedSaveGame.h"
-#include "SpeedSaveGame.h"
+#include <Kismet/GameplayStatics.h>
 
 ASpeedGameGameModeBase::ASpeedGameGameModeBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	if (UGameplayStatics::DoesSaveGameExist(SaveName, 0))
+		SaveGame= UGameplayStatics::LoadGameFromSlot(SaveName, 0);
+	else
+		SaveGame = UGameplayStatics::CreateSaveGameObject(SpeedSaveGame);
+
 }
 
 void ASpeedGameGameModeBase::BeginPlay()
@@ -54,14 +59,42 @@ void ASpeedGameGameModeBase::UpdateTimer(float deltaSeconds)
 
 void ASpeedGameGameModeBase::StopGame()
 {
+	if (IsTimerGoing)
+	{
+		USpeedSaveGame* speedSaveGame = SpeedSaveGame.GetDefaultObject();
+		TArray<FHighScoreData> highscores = speedSaveGame->GetHighScores();
+
+		PlayerIndexToSetName = -1;
+		for (int i= 0; i < highscores.Num(); i++)
+		{
+			if (Timer > highscores[i].Score && PlayerIndexToSetName == -1)
+			{
+				PlayerIndexToSetName = i;
+				highscores.Insert(FHighScoreData(TEXT(""), Timer), PlayerIndexToSetName);
+				highscores.Pop();
+				break;
+			}
+		}
+
+		ASpeedGameGameModeBase::ShowHighScoresOnUI(highscores, PlayerIndexToSetName);
+	}
+
 	IsTimerGoing = false;// make enum?
-	//getHighscore and show highscore UI and check if player has highscore
-	USpeedSaveGame* speedSaveGame = SpeedSaveGame.GetDefaultObject();
-	speedSaveGame->AddHighScore(9, FHighScoreData(TEXT("Test"), Timer));
-	speedSaveGame->GetHighScores();
 }
 
 void ASpeedGameGameModeBase::StartGame()
 {
 	IsTimerGoing = true;
+}
+
+
+void ASpeedGameGameModeBase::AddHighScore(FString PlayerNameToSave)
+{
+	if (PlayerIndexToSetName == -1)
+		return;
+
+	USpeedSaveGame* speedSaveGame = SpeedSaveGame.GetDefaultObject();
+	speedSaveGame->GetHighScores()[PlayerIndexToSetName].Name = PlayerNameToSave;
+
+	UGameplayStatics::SaveGameToSlot(SaveGame, SaveName, 0);
 }

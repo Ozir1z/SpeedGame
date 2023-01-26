@@ -18,9 +18,6 @@ public:
 	USpeedSaveGame();
 
 	void AddHighScore(int index, FHighScoreData highScoreData);
-
-	//FHighScoreData* TryToGetHighScoreDataToReplace(FHighScoreData score);
-	
 	TArray<FHighScoreData> GetHighScores();
 
 private:
@@ -28,7 +25,7 @@ private:
 };
 
 
-USTRUCT(Atomic)
+USTRUCT(BlueprintType)
 struct FHighScoreData
 {
 	GENERATED_USTRUCT_BODY()
@@ -37,13 +34,13 @@ struct FHighScoreData
 
 	}
 
-	FHighScoreData(FString name, int64 seconds) {
+	FHighScoreData(FString name, float score) {
 		Name = name;
-		Seconds = seconds;
+		Score = score;
 	}
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly, Category = "Speed Game | HighScore")
 	FString Name;
-	UPROPERTY()
-	int64 Seconds;
+	UPROPERTY(BlueprintReadOnly, Category = "Speed Game | HighScore")
+	float Score;
 };

@@ -144,38 +144,26 @@ void ASpeedVehiclePawn::PawnClientRestart()
 
 void ASpeedVehiclePawn::Steer(const FInputActionInstance& ActionInstance)
 {
-	if (CurrentBombStatus != BombStatus::Explodeded)
-	{
 		float ActionVector = ActionInstance.GetValue().Get<float>();
 		GetVehicleMovement()->SetSteeringInput(ActionVector);
-	}
 }
 
 void ASpeedVehiclePawn::Throttle(const FInputActionInstance& ActionInstance)
 {
-	if (CurrentBombStatus != BombStatus::Explodeded)
-	{
 		float ActionVector = ActionInstance.GetValue().Get<float>();
 		GetVehicleMovement()->SetThrottleInput(ActionVector);
-	}
 }
 
 void ASpeedVehiclePawn::Brake(const FInputActionInstance& ActionInstance)
 {
-	if (CurrentBombStatus != BombStatus::Explodeded)
-	{
 		float ActionVector = ActionInstance.GetValue().Get<float>();
 		GetVehicleMovement()->SetBrakeInput(ActionVector);
-	}
 }
 
 void ASpeedVehiclePawn::HandBrake(const FInputActionInstance& ActionInstance)
 {
-	if (CurrentBombStatus != BombStatus::Explodeded)
-	{
 		bool ActionVector = ActionInstance.GetValue().Get<bool>();
 		GetVehicleMovement()->SetHandbrakeInput(ActionVector);
-	}
 }
 
 

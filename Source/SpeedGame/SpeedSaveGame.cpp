@@ -5,24 +5,27 @@
 
 USpeedSaveGame::USpeedSaveGame()
 {
-//	HighScores.Init(FHighScoreData("Test", 1999),0);
-	HighScores.SetNum(10);
-	HighScores.Add(FHighScoreData(TEXT("Bob"), 86400));
-	HighScores.Add(FHighScoreData(TEXT("Bob"), 36000));
-	HighScores.Add(FHighScoreData(TEXT("Bob"), 18000));
-	HighScores.Add(FHighScoreData(TEXT("Bob"), 3600));
-	HighScores.Add(FHighScoreData(TEXT("Bob"), 1800));
+	HighScores.Empty();
+	if (HighScores.IsEmpty())
+	{
+		HighScores.Add(FHighScoreData(TEXT("xxUltImAtEbUssErxx"), 86400.f));
+		HighScores.Add(FHighScoreData(TEXT("YoMaMa"), 36000.f));
+		HighScores.Add(FHighScoreData(TEXT("HellBOI"), 18000.f));
+		HighScores.Add(FHighScoreData(TEXT("SusAF"), 3600.f));
+		HighScores.Add(FHighScoreData(TEXT("Bilbeau"), 1800.f));
 
-	HighScores.Add(FHighScoreData(TEXT("Bob"), 900));
-	HighScores.Add(FHighScoreData(TEXT("Bob"), 600));
-	HighScores.Add(FHighScoreData(TEXT("Bob"), 300));
-	HighScores.Add(FHighScoreData(TEXT("Bob"), 60));
-	HighScores.Add(FHighScoreData(TEXT("Bob"), 30));
+		HighScores.Add(FHighScoreData(TEXT("SLAYERr"), 900.f));
+		HighScores.Add(FHighScoreData(TEXT("Bald"), 600.f));
+		HighScores.Add(FHighScoreData(TEXT("FranK"), 300.f));
+		HighScores.Add(FHighScoreData(TEXT("TTV_SweatyG4mer"), 60.f));
+		HighScores.Add(FHighScoreData(TEXT("thisG4meSux"), 30.f));
+	}
 }
 
 void USpeedSaveGame::AddHighScore(int index, FHighScoreData highScoreData)
 {
-	HighScores.Insert(highScoreData, index);
+	//HighScores.Insert(highScoreData, index);
+	//HighScores.Pop();
 }
 
 TArray<FHighScoreData> USpeedSaveGame::GetHighScores()
