@@ -177,20 +177,18 @@ void URoadGenerator::SpawnNextRoadTile(FRotator& rotatorAdjustment, TSubclassOf<
 
 void URoadGenerator::SpawnAI()
 {
-	int leftOrRight = rand() & 1;
-	AAIWheeledVehiclePawn* aiVehicle;
-	if (leftOrRight == 0)
+	int forwardOrOncomming = rand() & 1; // 50 % forward 0, oncomming 1
+
+	UArrowComponent* arrowDirection = forwardOrOncomming == 0 ? CurrentRoadTile->GetForwardSpawnPoint() : CurrentRoadTile->GetOncommingSpawnPoint();
+	AAIWheeledVehiclePawn* aiVehicle = GetWorld()->SpawnActor<AAIWheeledVehiclePawn>(AICarBP, arrowDirection->GetComponentLocation(), arrowDirection->GetComponentRotation());
+	
+	if (aiVehicle == nullptr)
 	{
-		aiVehicle = GetWorld()->SpawnActor<AAIWheeledVehiclePawn>(AICarBP, CurrentRoadTile->GetForwardSpawnPoint()->GetComponentLocation(), CurrentRoadTile->GetForwardSpawnPoint()->GetComponentRotation());
-		aiVehicle->CurrentLane = LaneStatus::ForwardRight;
-	}
-	else 
-	{
-		aiVehicle = GetWorld()->SpawnActor<AAIWheeledVehiclePawn>(AICarBP, CurrentRoadTile->GetOncommingSpawnPoint()->GetComponentLocation(), CurrentRoadTile->GetOncommingSpawnPoint()->GetComponentRotation());
-		aiVehicle->CurrentLane = LaneStatus::OncomingRight;
-		//SetActorRotation(FQuat(0, 0, 180, 0), ETeleportType::TeleportPhysics);
+		UE_LOG(LogTemp, Warning, TEXT("Spawning AI car failed"));
+		return;
 	}
 
+	aiVehicle->CurrentLane = forwardOrOncomming == 0 ? LaneStatus::ForwardRight : LaneStatus::OncomingRight;
 	aiVehicle->SetCurrentRoad(CurrentRoadTile); // FIX THIS
 	
 	if (SpawnOneCarDebug)
