@@ -67,7 +67,7 @@ void URoadGenerator::AddRoadTile()
 {
 	FRotator rotatorAdjustment = NextSpawnPointData.Rotator;
 	TSubclassOf<ARoadTile> roadTileBPToSpawn = RoadTileBPStraight;
-	// make a hill
+
 	if (LastRoadTileType == RoadTileType::SlopeBottom && CurrentHillStatus == HillStatus::None)
 	{
 		CurrentHillStatus = HillStatus::StartBot;
@@ -121,8 +121,8 @@ void URoadGenerator::AddRoadTile()
 		roadTileBPToSpawn = RoadTilesStriaghtCollection[randomIndex];
 		// make possibly bigger corners than 1 tile
 		if ((roadTileBPToSpawn.GetDefaultObject()->GetRoadTileType() == RoadTileType::CornerLeft ||
-			roadTileBPToSpawn.GetDefaultObject()->GetRoadTileType() == RoadTileType::CornerRight &&
-			CornersLeft > 0))
+			roadTileBPToSpawn.GetDefaultObject()->GetRoadTileType() == RoadTileType::CornerRight) &&
+			CornersLeft > 0)
 		{
 			if(CornersLeft == 0)
 				CornersLeft = rand() % 5;

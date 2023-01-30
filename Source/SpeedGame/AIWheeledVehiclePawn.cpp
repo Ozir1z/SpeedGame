@@ -3,17 +3,26 @@
 
 #include "AIWheeledVehiclePawn.h"
 #include <ChaosVehicleMovementComponent.h>
+#include "GameFramework/SpringArmComponent.h"
 #include "Components/SplineComponent.h"
+#include "Components/BoxComponent.h"
 #include "RoadTile.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 
 AAIWheeledVehiclePawn::AAIWheeledVehiclePawn() 
 {
+	SrpingArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
 	LeftPoint = CreateDefaultSubobject<USceneComponent>(TEXT("LeftPoint"));
 	RightPoint = CreateDefaultSubobject<USceneComponent>(TEXT("RightPoint"));
 
+	SrpingArmComp->SetupAttachment(RootComponent);
 	LeftPoint->SetupAttachment(RootComponent);
 	RightPoint->SetupAttachment(RootComponent);
+
+	SrpingArmComp->TargetArmLength = 0;
+	SrpingArmComp->bDoCollisionTest = false;
 }
 
 void AAIWheeledVehiclePawn::BeginPlay()
@@ -27,11 +36,34 @@ void AAIWheeledVehiclePawn::Tick(float deltaSeconds)
 {
 	Super::Tick(deltaSeconds);
 
-	if (GetActorLocation().Z <= -10000)
-		Destroy();
+	if (CurrentRoadTile == nullptr)
+	{
+		HandleVehicleGoingOffroad();
+		return; // we dont wanna do shit if there is no current road tile
+	}
 
 	SlowdownBehindVehicleAndChangeLane(deltaSeconds);
 	DriveInLane(deltaSeconds);
+}
+
+void AAIWheeledVehiclePawn::HandleVehicleGoingOffroad()
+{
+	if (!isAlive)
+		return;
+
+	isAlive = false;
+
+	GetMesh()->SetEnableGravity(false);
+	SetCurrentRoad(nullptr);
+	
+	if (DeathParticle)
+		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAttached(DeathParticle, SrpingArmComp, NAME_None, FVector(0,0,-300), FRotator(0,90,0), FVector(2.0f), EAttachLocation::Type::KeepRelativeOffset, true, ENCPoolMethod::FreeInPool);
+
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]()
+		{
+			Destroy();
+		}, 5, false); //randomize tis time
 }
 
 void AAIWheeledVehiclePawn::SetCurrentRoad(ARoadTile* currentRoadTile)
@@ -42,12 +74,6 @@ void AAIWheeledVehiclePawn::SetCurrentRoad(ARoadTile* currentRoadTile)
 
 void AAIWheeledVehiclePawn::DriveInLane(float deltaSeconds)
 {
-	if (CurrentRoadTile == nullptr)
-	{
-		UE_LOG(LogTemp, Display, TEXT("Current road doesn't exist"));
-		return;
-	}
-
 	float throttleInput = GetVehicleMovement()->GetForwardSpeedMPH() <= MaxSpeed ? 1 : 0;
 	GetVehicleMovement()->SetThrottleInput(throttleInput);
 	

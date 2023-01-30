@@ -76,10 +76,18 @@ protected:
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* OncommingTriggerBox;
 
+	UPROPERTY(EditDefaultsOnly)
+	class UBoxComponent* LeftSideTriggerBox;
+
+	UPROPERTY(EditDefaultsOnly)
+	class UBoxComponent* RightSideTriggerBox;
+
 	UFUNCTION()
 	void OnOverlapForwardBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	UFUNCTION()
 	void OnOverlapOncomingBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void OnSideTriggerBoxOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UPROPERTY(EditAnywhere, Category = "SpeedGame | RoadType")
 	RoadTileType RoadTileType = RoadTileType::None;
@@ -96,6 +104,18 @@ struct FAttachPointData
 {
 	GENERATED_USTRUCT_BODY()
 
+public:
+	FAttachPointData() 
+	{
+
+	}
+
+	FAttachPointData(FVector location, FRotator rotator)
+	{
+		Location = location;
+		Rotator = rotator;
+	}
+	
 	UPROPERTY()
 	FVector Location;
 	UPROPERTY()

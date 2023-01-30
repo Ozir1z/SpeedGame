@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.)
 
 #include "SpeedVehiclePawn.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -68,6 +68,15 @@ void ASpeedVehiclePawn::BeginPlay()
 	Super::BeginPlay();
 }
 
+void ASpeedVehiclePawn::HandleVehicleGoingOffroad()
+{
+	if (CurrentBombStatus == BombStatus::Explodeded)
+		return;
+
+	Death();
+	CurrentBombStatus = BombStatus::Explodeded;
+}
+
 
 void ASpeedVehiclePawn::Tick(float DeltaTime)
 {
@@ -76,13 +85,14 @@ void ASpeedVehiclePawn::Tick(float DeltaTime)
 	HandleVehicleSpeed();
 	
 	TimePassedSinceCameraInput += DeltaTime;
-	if (TimePassedSinceCameraInput > 1.5f)
+	if (TimePassedSinceCameraInput > 1.5f && CurrentBombStatus != BombStatus::Explodeded)
 		SwitchCameraStatusTo(CameraStatus::Follow);
+	if(CurrentBombStatus == BombStatus::Explodeded)
+		SwitchCameraStatusTo(CameraStatus::Manual);
 }
 
 void ASpeedVehiclePawn::HandleVehicleSpeed()
 {
-	//USpeedGameInstance* gameInstance = Cast<USpeedGameInstance>(GetWorld()->GetGameInstance());
 	ASpeedGameGameModeBase* gameMode = (ASpeedGameGameModeBase*)GetWorld()->GetAuthGameMode();
 
 	int speed = static_cast<int>(GetVehicleMovementComponent()->GetForwardSpeedMPH());
@@ -92,8 +102,7 @@ void ASpeedVehiclePawn::HandleVehicleSpeed()
 		CurrentBombStatus = BombStatus::Active;
 	if (speed < 30 && CurrentBombStatus == BombStatus::Active)
 	{
-		CurrentBombStatus = BombStatus::Explodeded;
-		Death();
+		HandleVehicleGoingOffroad();
 	}
 	if (CurrentBombStatus == BombStatus::Explodeded)
 	{
@@ -106,12 +115,13 @@ void ASpeedVehiclePawn::HandleVehicleSpeed()
 
 void ASpeedVehiclePawn::Death()
 {
+	GetMesh()->SetEnableGravity(false);
 	GetMesh()->SetSkeletalMeshAsset(SecondaryMesh);
-	GetMesh()->AddVelocityChangeImpulseAtLocation(FVector(200,0, 200), FVector(), TEXT("Body"));
+	GetMesh()->AddVelocityChangeImpulseAtLocation(FVector(200,0, 50), FVector(), TEXT("Body"));
 	
 
 	if(DeathParticle)
-		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAttached(DeathParticle, RootComponent, NAME_None, FVector(0.f), FRotator(0.f), EAttachLocation::Type::KeepRelativeOffset, true);
+		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(),DeathParticle, GetActorLocation(), GetActorRotation(), FVector(5.0f));
 }
 
 void ASpeedVehiclePawn::SwitchCameraStatusTo(CameraStatus newCameraStatus)

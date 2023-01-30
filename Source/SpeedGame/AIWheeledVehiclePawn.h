@@ -35,6 +35,9 @@ class SPEEDGAME_API AAIWheeledVehiclePawn : public AWheeledVehiclePawn
 
 public:
 	UPROPERTY(EditAnywhere)
+	class USpringArmComponent* SrpingArmComp;
+
+	UPROPERTY(EditAnywhere)
 	class USceneComponent* LeftPoint;
 
 	UPROPERTY(EditAnywhere)
@@ -47,9 +50,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SpeedGame | speed")
 	CarType CurrentCarType;
 
+	void HandleVehicleGoingOffroad();
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float deltaSeconds) override;
+
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* DeathParticle;
 
 	void DriveInLane(float deltaSeconds);
 	void SlowdownBehindVehicleAndChangeLane(float deltaSeconds);
@@ -71,7 +79,7 @@ private:
 	class USplineComponent* GetCurrentaneSpline();
 
 	bool HasrecentlySwitchedLanes = false;
-	UMaterialInstanceDynamic* MaterialInstance;
+	bool isAlive = true;
 
 	void SwitchLane();
 	bool IsOtherCarOnOtherSideOfTheRoad(class AAIWheeledVehiclePawn* aiCar);

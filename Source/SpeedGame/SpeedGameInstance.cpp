@@ -6,8 +6,7 @@
 
 USpeedGameInstance::USpeedGameInstance()
 {
-    SaveGameSlotName = "SPEED_SAVE_012";
-
+    SaveGameSlotName = "SPEED_SAVE_GAME";
 }
 
 void USpeedGameInstance::LoadGame()
@@ -22,9 +21,7 @@ void USpeedGameInstance::LoadGame()
         UE_LOG(LogTemp, Warning, TEXT("No saved games found. Trying to save a new one."));
 
         SaveGameObject = Cast<USpeedSaveGame>(UGameplayStatics::CreateSaveGameObject(USpeedSaveGame::StaticClass()));
-        SaveGameObject->Init();
 
-        // Call SaveGameToSlot to serialize and save our SaveGameObject with name: <SaveGameSlotName>.sav
         const bool IsSaved = UGameplayStatics::SaveGameToSlot(SaveGameObject, SaveGameSlotName, 0);
 
         LogIfGameWasSavedOrNot(IsSaved);

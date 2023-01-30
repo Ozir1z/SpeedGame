@@ -35,9 +35,7 @@ class SPEEDGAME_API USpeedSaveGame : public USaveGame
 	GENERATED_BODY()
 
 public:
-	USpeedSaveGame();
-
-	void Init();
+	USpeedSaveGame();;
 
 	void AddHighScore(int index, FHighScoreData highScoreData);
 	TArray<FHighScoreData> GetHighScores();

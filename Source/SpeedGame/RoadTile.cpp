@@ -21,15 +21,22 @@ ARoadTile::ARoadTile()
 	SpawnPoint = CreateDefaultSubobject<UArrowComponent>(TEXT("SpawnPoint"));
 	SpawnPointOncomming = CreateDefaultSubobject<UArrowComponent>(TEXT("SpawnPointOncomming"));
 
+	// Road splines
 	ForwardRightLane = CreateDefaultSubobject<USplineComponent>("ForwardRightLaneSpline");
 	ForwardLefttLane = CreateDefaultSubobject<USplineComponent>("ForwardLefttLaneSpline");
 	OncommingLeftLane = CreateDefaultSubobject<USplineComponent>("OncommingLeftLaneSpline");
 	OncommingRightLane = CreateDefaultSubobject<USplineComponent>("OncommingRightLaneSpline");
 
+	// Trigger Boxes
 	ForwardTriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("ForwardTriggerBox"));
 	OncommingTriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("OncommingTriggerBox"));
+	LeftSideTriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftSideTriggerBox"));
+	RightSideTriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("RightSideTriggerBox"));
+
 	ForwardTriggerBox->SetCollisionProfileName(TEXT("Trigger"));
 	OncommingTriggerBox->SetCollisionProfileName(TEXT("Trigger"));
+	LeftSideTriggerBox->SetCollisionProfileName(TEXT("Trigger"));
+	RightSideTriggerBox->SetCollisionProfileName(TEXT("Trigger"));
 
 	RootComponent = CustomRootComponent;
 
@@ -37,18 +44,18 @@ ARoadTile::ARoadTile()
 	NextRoadPoint->SetupAttachment(RootComponent);
 	SpawnPoint->SetupAttachment(RootComponent);
 	SpawnPointOncomming->SetupAttachment(RootComponent);
+
+	// Trigger boxes
 	ForwardTriggerBox->SetupAttachment(RootComponent);
 	OncommingTriggerBox->SetupAttachment(RootComponent);
+	LeftSideTriggerBox->SetupAttachment(RootComponent);
+	RightSideTriggerBox->SetupAttachment(RootComponent);
 
+	// Road Splines
 	ForwardRightLane->SetupAttachment(RootComponent);
 	ForwardLefttLane->SetupAttachment(RootComponent);
 	OncommingLeftLane->SetupAttachment(RootComponent);
 	OncommingRightLane->SetupAttachment(RootComponent);
-
-	/*ForwardRightLane->bDrawDebug = true;
-	ForwardLefttLane->bDrawDebug = true;
-	OncommingLeftLane->bDrawDebug = true;
-	OncommingRightLane->bDrawDebug = true;*/
 }
 
 void ARoadTile::Init(URoadGenerator* roadGenerator)
@@ -64,6 +71,9 @@ void ARoadTile::BeginPlay()
 
 	ForwardTriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ARoadTile::OnOverlapForwardBegin);
 	OncommingTriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ARoadTile::OnOverlapOncomingBegin);
+
+	LeftSideTriggerBox->OnComponentEndOverlap.AddDynamic(this, &ARoadTile::OnSideTriggerBoxOverlapEnd);
+	RightSideTriggerBox->OnComponentEndOverlap.AddDynamic(this, &ARoadTile::OnSideTriggerBoxOverlapEnd);
 }
 
 
@@ -75,10 +85,7 @@ void ARoadTile::Tick(float DeltaTime)
 
 FAttachPointData ARoadTile::GetAttachPointData()
 {
-	return FAttachPointData{
-		NextRoadPoint->GetComponentLocation(),
-		NextRoadPoint->GetComponentQuat().Rotator()
-	};	
+	return FAttachPointData(NextRoadPoint->GetComponentLocation(), NextRoadPoint->GetComponentQuat().Rotator());
 }
 
 RoadTileType ARoadTile::GetRoadTileType()
@@ -117,12 +124,20 @@ void ARoadTile::OnOverlapOncomingBegin(UPrimitiveComponent* OverlappedComp, AAct
 		SetCurrentRoadTileForVehicleOrDestroy(PerviousTile, aiVehicle, LaneStatus::OncomingLeft, LaneStatus::OncomingRight);
 }
 
+void ARoadTile::OnSideTriggerBoxOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (AAIWheeledVehiclePawn* aiVehicle = Cast<AAIWheeledVehiclePawn>(OtherActor))
+		aiVehicle->HandleVehicleGoingOffroad();
+	if (ASpeedVehiclePawn* bus = Cast<ASpeedVehiclePawn>(OtherActor))
+		bus->HandleVehicleGoingOffroad();
+}
+
 void ARoadTile::SetCurrentRoadTileForVehicleOrDestroy(ARoadTile* roadTileToSet, AAIWheeledVehiclePawn* aiVehicle, LaneStatus LeftLaneStatus, LaneStatus RightLaneStatus)
 {
-	if (!roadTileToSet) // ROAD END SO BYE BYE
+	if (!roadTileToSet) 
 	{
+		aiVehicle->HandleVehicleGoingOffroad();
 		aiVehicle->SetCurrentRoad(nullptr);
-		aiVehicle->Destroy();
 		return;
 	}
 
@@ -139,6 +154,7 @@ void ARoadTile::GenerateAndDestroyRoad()
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]()
 		{
+			NextTile->PerviousTile = nullptr;
 			Destroy();
 		}, 20, false);
 }

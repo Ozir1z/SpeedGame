@@ -33,6 +33,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void BeginPlay() override;
 
+	void HandleVehicleGoingOffroad();
+
 protected:
 	virtual void PawnClientRestart() override;
 
