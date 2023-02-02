@@ -66,9 +66,9 @@ private:
 
 	TArray<TSubclassOf<ARoadTile>> RoadTilesTopCollection;
 	TArray<TSubclassOf<ARoadTile>> RoadTilesBotCollection;
-	TArray<TSubclassOf<ARoadTile>> RoadTilesStriaghtCollection;
+	TArray<TSubclassOf<ARoadTile>> RoadTilesStraightCollection;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Road Generation | Road")
+	UPROPERTY(EditAnywhere, Category = "Road Generation | Road")
 	int AmountOfRoadPiecesAhead = 20;
 
 	HillStatus CurrentHillStatus = HillStatus::None;
@@ -78,9 +78,9 @@ private:
 	ARoadTile* CurrentRoadTile = nullptr;
 	void SpawnNextRoadTile(FRotator& rotatorAdjustment, TSubclassOf<ARoadTile>& roadTileBPToSpawn);
 
-	int const AmountOfStraightsUntilCorner = 3;
-	int StraightLeftsUntilCorner = AmountOfStraightsUntilCorner;
-	int CornersLeft = CornersLeft = rand() % 4;
+	int const AmountOfStraightsUntilOther = 3;
+	int StraightLeftsUntilOther = 0;
+	int CornersLeft = 0;
 
 	//AI
 	UPROPERTY(EditDefaultsOnly, Category = "Road Generation | Car")

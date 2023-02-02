@@ -47,10 +47,10 @@ void URoadGenerator::BeginPlay()
 	RoadTilesBotCollection.Add(RoadTileBPSlopeBot);
 	RoadTilesBotCollection.Add(RoadTileBPStraight);
 
-	RoadTilesStriaghtCollection.Add(RoadTileBPSlopeBot);
-	RoadTilesStriaghtCollection.Add(RoadTileBPStraight);
-	RoadTilesStriaghtCollection.Add(RoadTileBPCornerLeft);
-	RoadTilesStriaghtCollection.Add(RoadTileBPCornerRight);
+	RoadTilesStraightCollection.Add(RoadTileBPSlopeBot);
+	RoadTilesStraightCollection.Add(RoadTileBPStraight);
+	RoadTilesStraightCollection.Add(RoadTileBPCornerLeft);
+	RoadTilesStraightCollection.Add(RoadTileBPCornerRight);
 
 	for (int i = 0; i < AmountOfRoadPiecesAhead; i++)
 	{
@@ -111,36 +111,37 @@ void URoadGenerator::AddRoadTile()
 	else if (CurrentHillStatus == HillStatus::EndBot)
 	{
 		CurrentHillStatus = HillStatus::None;
-	}
-
-	// done with hill?
+	}// done with hill?
 	if (CurrentHillStatus == HillStatus::None)
 	{
-		int randomIndex = randomIndex = rand() % RoadTilesStriaghtCollection.Num();
-		roadTileBPToSpawn = RoadTilesStriaghtCollection[randomIndex];
-		roadTileBPToSpawn = RoadTilesStriaghtCollection[randomIndex];
+		int randomIndex = randomIndex = rand() % RoadTilesStraightCollection.Num();
+		//roadTileBPToSpawn = RoadTilesStraightCollection[randomIndex];
+
 		// make possibly bigger corners than 1 tile
-		if ((roadTileBPToSpawn.GetDefaultObject()->GetRoadTileType() == RoadTileType::CornerLeft ||
-			roadTileBPToSpawn.GetDefaultObject()->GetRoadTileType() == RoadTileType::CornerRight) &&
+		if ((LastRoadTileType == RoadTileType::CornerLeft ||
+			LastRoadTileType == RoadTileType::CornerRight) &&
 			CornersLeft > 0)
 		{
-			if(CornersLeft == 0)
-				CornersLeft = rand() % 5;
-
+			roadTileBPToSpawn = LastRoadTileType == RoadTileType::CornerLeft ? RoadTileBPCornerLeft : RoadTileBPCornerRight;
 			CornersLeft--;
-
 		} 	
-		else//we want a straight unril count is 0
+		else if (LastRoadTileType == RoadTileType::Straight
+			&& StraightLeftsUntilOther > 0)
 		{
-			if (LastRoadTileType != RoadTileType::Straight || StraightLeftsUntilCorner > 0)
-				roadTileBPToSpawn = RoadTileBPStraight;
-			// if count is finally 0 then reset it to original amount of srtiaghts 
-			// we can now do corners again if lastRoadTileType was not striaght
-			if (StraightLeftsUntilCorner == 0)
-				StraightLeftsUntilCorner = AmountOfStraightsUntilCorner;
-			// if the last one was striaght lower the straightsLeft
-			if (LastRoadTileType == RoadTileType::Straight)
-				StraightLeftsUntilCorner--;
+			roadTileBPToSpawn = RoadTileBPStraight;
+			StraightLeftsUntilOther--;
+		}
+
+		if (StraightLeftsUntilOther == 0)
+		{
+			StraightLeftsUntilOther = AmountOfStraightsUntilOther;
+			roadTileBPToSpawn = RoadTilesStraightCollection[randomIndex];
+		}
+
+		if (CornersLeft == 0)
+		{
+			roadTileBPToSpawn = RoadTileBPStraight;
+			CornersLeft = rand() % 5;
 		}
 	}
 

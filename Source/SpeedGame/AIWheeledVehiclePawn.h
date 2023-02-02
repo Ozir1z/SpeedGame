@@ -23,6 +23,14 @@ enum class CarType : uint8
 	Fast = 2 UMETA(DisplayName = "Fast"),
 };
 
+UENUM(BlueprintType)
+enum class CarStatus : uint8
+{
+	Alive = 0 UMETA(DisplayName = "Alive"),
+	Dying = 1 UMETA(DisplayName = "Dying"),
+	Dead = 2 UMETA(DisplayName = "Dead"),
+};
+
 UCLASS()
 class SPEEDGAME_API AAIWheeledVehiclePawn : public AWheeledVehiclePawn
 {
@@ -47,10 +55,10 @@ public:
 
 	LaneStatus CurrentLane;
 
+	CarStatus CurrentCarStatus = CarStatus::Alive;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SpeedGame | speed")
 	CarType CurrentCarType;
-
-	void HandleVehicleGoingOffroad();
 
 protected:
 	virtual void BeginPlay() override;
@@ -79,10 +87,13 @@ private:
 	class USplineComponent* GetCurrentaneSpline();
 
 	bool HasrecentlySwitchedLanes = false;
-	bool isAlive = true;
+	bool StartedDying = false;
+	float DeathTimer = rand() % 7 + 5;
+	float CurrenDeathTimer = 0;
 
 	void SwitchLane();
 	bool IsOtherCarOnOtherSideOfTheRoad(class AAIWheeledVehiclePawn* aiCar);
 
 	void GetRandomCarTypeAndSetSpeed();
+	void HandleVehicleGoingOffroad(float deltaSeconds);
 };

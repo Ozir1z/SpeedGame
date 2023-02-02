@@ -127,16 +127,16 @@ void ARoadTile::OnOverlapOncomingBegin(UPrimitiveComponent* OverlappedComp, AAct
 void ARoadTile::OnSideTriggerBoxOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (AAIWheeledVehiclePawn* aiVehicle = Cast<AAIWheeledVehiclePawn>(OtherActor))
-		aiVehicle->HandleVehicleGoingOffroad();
+		aiVehicle->CurrentCarStatus = CarStatus::Dying;
 	if (ASpeedVehiclePawn* bus = Cast<ASpeedVehiclePawn>(OtherActor))
 		bus->HandleVehicleGoingOffroad();
 }
 
 void ARoadTile::SetCurrentRoadTileForVehicleOrDestroy(ARoadTile* roadTileToSet, AAIWheeledVehiclePawn* aiVehicle, LaneStatus LeftLaneStatus, LaneStatus RightLaneStatus)
 {
-	if (!roadTileToSet) 
+	if (!roadTileToSet) //end of the road
 	{
-		aiVehicle->HandleVehicleGoingOffroad();
+		aiVehicle->CurrentCarStatus = CarStatus::Dying;
 		aiVehicle->SetCurrentRoad(nullptr);
 		return;
 	}
@@ -154,7 +154,6 @@ void ARoadTile::GenerateAndDestroyRoad()
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]()
 		{
-			NextTile->PerviousTile = nullptr;
 			Destroy();
 		}, 20, false);
 }

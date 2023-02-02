@@ -9,7 +9,6 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "SpeedGameGameModeBase.h"
-//#include "SpeedGameInstance.h"
 
 ASpeedVehiclePawn::ASpeedVehiclePawn()
 {
@@ -115,13 +114,11 @@ void ASpeedVehiclePawn::HandleVehicleSpeed()
 
 void ASpeedVehiclePawn::Death()
 {
+	if (DeathParticle)
+		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathParticle, GetActorLocation(), GetActorRotation());
 	GetMesh()->SetEnableGravity(false);
 	GetMesh()->SetSkeletalMeshAsset(SecondaryMesh);
 	GetMesh()->AddVelocityChangeImpulseAtLocation(FVector(200,0, 50), FVector(), TEXT("Body"));
-	
-
-	if(DeathParticle)
-		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(),DeathParticle, GetActorLocation(), GetActorRotation(), FVector(5.0f));
 }
 
 void ASpeedVehiclePawn::SwitchCameraStatusTo(CameraStatus newCameraStatus)

@@ -36,9 +36,16 @@ void AAIWheeledVehiclePawn::Tick(float deltaSeconds)
 {
 	Super::Tick(deltaSeconds);
 
-	if (CurrentRoadTile == nullptr)
+	if (CurrentRoadTile && GetActorLocation().Z < CurrentRoadTile->GetActorLocation().Z - 150)
+		CurrentCarStatus = CarStatus::Dying;
+
+	if (CurrentCarStatus == CarStatus::Dead)
+		return; // this fool done
+
+	
+	if (CurrentRoadTile == nullptr || CurrentCarStatus == CarStatus::Dying)
 	{
-		HandleVehicleGoingOffroad();
+		HandleVehicleGoingOffroad(deltaSeconds);
 		return; // we dont wanna do shit if there is no current road tile
 	}
 
@@ -46,24 +53,26 @@ void AAIWheeledVehiclePawn::Tick(float deltaSeconds)
 	DriveInLane(deltaSeconds);
 }
 
-void AAIWheeledVehiclePawn::HandleVehicleGoingOffroad()
+void AAIWheeledVehiclePawn::HandleVehicleGoingOffroad(float deltaSeconds)
 {
-	if (!isAlive)
+	CurrenDeathTimer += deltaSeconds;
+	if (!StartedDying)
+	{
+		StartedDying = true;
+		GetMesh()->SetEnableGravity(false);
+		SetCurrentRoad(nullptr);
+	}
+
+	if (CurrenDeathTimer < DeathTimer)
 		return;
 
-	isAlive = false;
-
+	CurrentCarStatus = CarStatus::Dead;
 	GetMesh()->SetEnableGravity(false);
 	SetCurrentRoad(nullptr);
-	
-	if (DeathParticle)
-		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAttached(DeathParticle, SrpingArmComp, NAME_None, FVector(0,0,-300), FRotator(0,90,0), FVector(2.0f), EAttachLocation::Type::KeepRelativeOffset, true, ENCPoolMethod::FreeInPool);
 
-	FTimerHandle TimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]()
-		{
-			Destroy();
-		}, 5, false); //randomize tis time
+	if (DeathParticle)
+		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathParticle, GetActorLocation(), GetActorRotation(), FVector(5.0f));
+	Destroy();
 }
 
 void AAIWheeledVehiclePawn::SetCurrentRoad(ARoadTile* currentRoadTile)
@@ -78,7 +87,7 @@ void AAIWheeledVehiclePawn::DriveInLane(float deltaSeconds)
 	GetVehicleMovement()->SetThrottleInput(throttleInput);
 	
 	FVector targetPoint = GetCurrentaneSpline()->GetLocationAtDistanceAlongSpline(TargetSplineDistance, ESplineCoordinateSpace::World);
-	double distance = FVector::Distance(targetPoint, GetActorLocation());
+	double distance = FVector::Dist(targetPoint, GetActorLocation());
 
 	if (distance < CheckGap)
 		TargetSplineDistance += CheckGap;
