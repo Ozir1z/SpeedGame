@@ -21,6 +21,7 @@ enum class CarType : uint8
 	Slow = 0 UMETA(DisplayName = "Slow"),
 	Normal = 1 UMETA(DisplayName = "Normal"),
 	Fast = 2 UMETA(DisplayName = "Fast"),
+	Insane =3 UMETA(DisplayName = "Insane"),
 };
 
 UENUM(BlueprintType)
@@ -31,6 +32,8 @@ enum class CarStatus : uint8
 	Dead = 2 UMETA(DisplayName = "Dead"),
 };
 
+
+// TODO: Make base class and base blueprint to handle overlapping/duplicate code
 UCLASS()
 class SPEEDGAME_API AAIWheeledVehiclePawn : public AWheeledVehiclePawn
 {
@@ -43,9 +46,6 @@ class SPEEDGAME_API AAIWheeledVehiclePawn : public AWheeledVehiclePawn
 
 public:
 	UPROPERTY(EditAnywhere)
-	class USpringArmComponent* SrpingArmComp;
-
-	UPROPERTY(EditAnywhere)
 	class USceneComponent* LeftPoint;
 
 	UPROPERTY(EditAnywhere)
@@ -55,6 +55,7 @@ public:
 
 	LaneStatus CurrentLane;
 
+	UPROPERTY(BluePrintReadOnly)
 	CarStatus CurrentCarStatus = CarStatus::Alive;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SpeedGame | speed")
@@ -71,12 +72,12 @@ protected:
 	void SlowdownBehindVehicleAndChangeLane(float deltaSeconds);
 
 	float TargetSplineDistance = 0.f;
-	float CheckGap = 500.f;
+	float CheckGap = 400.f;
 	float SteerAmount = 0.f;
 	float BrakeAmount = 0.f;
 
 	UPROPERTY(EditAnywhere, Category = "SpeedGame | speed")
-	TArray<float> VariableMaxSpeeds = { 45.f, 50.f, 60.f};
+	TArray<float> VariableMaxSpeeds = { 40.f, 50.f, 60.f};
 
 	class ARoadTile* CurrentRoadTile = nullptr;
 

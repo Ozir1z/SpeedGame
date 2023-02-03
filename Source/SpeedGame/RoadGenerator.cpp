@@ -168,7 +168,7 @@ void URoadGenerator::SpawnNextRoadTile(FRotator& rotatorAdjustment, TSubclassOf<
 		SpawnOneCarDebugCompleted = true;
 		SpawnAI();
 	}
-	else
+	else if(!SpawnOneCarDebug)
 	{
 		int chance = rand() % 2;  // CHANCE TO SPAWN CAR ON A TILE
 		if(chance == 0)

@@ -8,6 +8,7 @@
 #include <EnhancedInputComponent.h>
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include <Kismet/KismetMathLibrary.h>
 #include "SpeedGameGameModeBase.h"
 
 ASpeedVehiclePawn::ASpeedVehiclePawn()
@@ -116,9 +117,11 @@ void ASpeedVehiclePawn::Death()
 {
 	if (DeathParticle)
 		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathParticle, GetActorLocation(), GetActorRotation());
+	double forwardSpeedAbs = UKismetMathLibrary::Abs(GetVehicleMovementComponent()->GetForwardSpeed());
 	GetMesh()->SetEnableGravity(false);
 	GetMesh()->SetSkeletalMeshAsset(SecondaryMesh);
-	GetMesh()->AddVelocityChangeImpulseAtLocation(FVector(200,0, 50), FVector(), TEXT("Body"));
+	FVector impulse = (GetActorForwardVector() * forwardSpeedAbs) + (GetActorUpVector() * 500);
+	GetMesh()->AddVelocityChangeImpulseAtLocation(impulse, GetActorLocation(), TEXT("Body"));
 }
 
 void ASpeedVehiclePawn::SwitchCameraStatusTo(CameraStatus newCameraStatus)

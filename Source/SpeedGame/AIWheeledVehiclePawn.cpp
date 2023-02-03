@@ -3,6 +3,7 @@
 
 #include "AIWheeledVehiclePawn.h"
 #include <ChaosVehicleMovementComponent.h>
+#include <ChaosWheeledVehicleMovementComponent.h>
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SplineComponent.h"
 #include "Components/BoxComponent.h"
@@ -10,19 +11,13 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 
-
 AAIWheeledVehiclePawn::AAIWheeledVehiclePawn() 
 {
-	SrpingArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
 	LeftPoint = CreateDefaultSubobject<USceneComponent>(TEXT("LeftPoint"));
 	RightPoint = CreateDefaultSubobject<USceneComponent>(TEXT("RightPoint"));
 
-	SrpingArmComp->SetupAttachment(RootComponent);
 	LeftPoint->SetupAttachment(RootComponent);
 	RightPoint->SetupAttachment(RootComponent);
-
-	SrpingArmComp->TargetArmLength = 0;
-	SrpingArmComp->bDoCollisionTest = false;
 }
 
 void AAIWheeledVehiclePawn::BeginPlay()
@@ -36,7 +31,7 @@ void AAIWheeledVehiclePawn::Tick(float deltaSeconds)
 {
 	Super::Tick(deltaSeconds);
 
-	if (CurrentRoadTile && GetActorLocation().Z < CurrentRoadTile->GetActorLocation().Z - 150)
+	if (CurrentRoadTile && GetActorLocation().Z < CurrentRoadTile->GetActorLocation().Z - 300)
 		CurrentCarStatus = CarStatus::Dying;
 
 	if (CurrentCarStatus == CarStatus::Dead)
@@ -85,7 +80,7 @@ void AAIWheeledVehiclePawn::DriveInLane(float deltaSeconds)
 {
 	float throttleInput = GetVehicleMovement()->GetForwardSpeedMPH() <= MaxSpeed ? 1 : 0;
 	GetVehicleMovement()->SetThrottleInput(throttleInput);
-	
+
 	FVector targetPoint = GetCurrentaneSpline()->GetLocationAtDistanceAlongSpline(TargetSplineDistance, ESplineCoordinateSpace::World);
 	double distance = FVector::Dist(targetPoint, GetActorLocation());
 
@@ -95,7 +90,9 @@ void AAIWheeledVehiclePawn::DriveInLane(float deltaSeconds)
 
 	float leftPointDistance = FVector::Distance(targetPoint, LeftPoint->GetComponentLocation());
 	float rightPointDistance = FVector::Distance(targetPoint, RightPoint->GetComponentLocation());
-	float steeringInput = leftPointDistance > rightPointDistance ? .45f : -.45f;
+	float steerAmount = CurrentCarType == CarType::Insane ? .55f : .45f;
+
+	float steeringInput = leftPointDistance > rightPointDistance ? steerAmount : -steerAmount;
 
 	float spaceBetweenLeftandRightAbs = abs(leftPointDistance - rightPointDistance);
 
@@ -116,7 +113,7 @@ void AAIWheeledVehiclePawn::DriveInLane(float deltaSeconds)
 
 void AAIWheeledVehiclePawn::SlowdownBehindVehicleAndChangeLane(float deltaSeconds)
 {
-	//refactor this shit its terrifying
+	//refactor, this shit its terrifying
 	FVector start = GetActorLocation();
 	FVector forward = GetActorForwardVector();
 	start = FVector(start.X + (forward.X * 50), start.Y, start.Z);
@@ -160,7 +157,7 @@ void AAIWheeledVehiclePawn::SlowdownBehindVehicleAndChangeLane(float deltaSecond
 
 	if (actorHitNormalBrake && hitNormalBrake.GetActor())
 	{
-		AAIWheeledVehiclePawn* aiCar = Cast<AAIWheeledVehiclePawn>(hitHandBrake.GetActor());
+		AAIWheeledVehiclePawn* aiCar = Cast<AAIWheeledVehiclePawn>(hitNormalBrake.GetActor());
 		if (aiCar)
 		{
 			if (IsOtherCarOnOtherSideOfTheRoad(aiCar))
@@ -211,10 +208,11 @@ void AAIWheeledVehiclePawn::SwitchLane()
 	SteerAmount = 0.1f;
 
 	FTimerHandle TimerHandle;
+	float randomTimeToSwitch = rand() % 20 + 10;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]()
 		{
 			HasrecentlySwitchedLanes = false;
-		}, 5, false); // 5 seconds make variable?
+		}, randomTimeToSwitch, false); // 5 seconds make variable?
 
 	switch (CurrentLane)
 	{
@@ -248,8 +246,17 @@ bool AAIWheeledVehiclePawn::IsOtherCarOnOtherSideOfTheRoad(AAIWheeledVehiclePawn
 void AAIWheeledVehiclePawn::GetRandomCarTypeAndSetSpeed()
 {
 	float random = rand() % VariableMaxSpeeds.Num();
-
-	CurrentCarType = CarType(random);
-	MaxSpeed = VariableMaxSpeeds[random];
+	float insaneCarChance = rand() % 9;
+	
+	if (insaneCarChance == 0)
+	{
+		CurrentCarType = CarType::Insane;
+		MaxSpeed = 75.f;
+	}
+	else {
+		CurrentCarType = CarType(random);
+		MaxSpeed = VariableMaxSpeeds[random];
+	}
+	
 	AAIWheeledVehiclePawn::ChangeColor();
 }

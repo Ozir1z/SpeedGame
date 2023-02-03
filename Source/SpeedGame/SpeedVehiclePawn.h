@@ -14,7 +14,7 @@ enum class CameraStatus : uint8
 	Manual UMETA(DisplayName = "Manual")
 };
 
-UENUM()
+UENUM(BlueprintType)
 enum class BombStatus : uint8
 {
 	Inactive UMETA(DisplayName = "Inactive"),
@@ -22,6 +22,7 @@ enum class BombStatus : uint8
 	Explodeded UMETA(DisplayName = "Explodeded")
 };
 
+// TODO: Make base class and base blueprint to handle overlapping/duplicate code
 UCLASS()
 class SPEEDGAME_API ASpeedVehiclePawn : public AWheeledVehiclePawn
 {
@@ -74,6 +75,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, category = "Controls|Input Mappings")
 	int32 InputMappingPriority = 0;
 
+	UPROPERTY(BluePrintReadOnly)
+	BombStatus CurrentBombStatus = BombStatus::Inactive;
+
 	// INPUT FUCNTIONS //
 	void Steer(const FInputActionInstance& ActionInstance);
 	void Throttle(const FInputActionInstance& ActionInstance);
@@ -86,9 +90,6 @@ protected:
 private:
 	UPROPERTY()
 	CameraStatus CurrentCameraStatus = CameraStatus::Follow;
-	
-	UPROPERTY()
-	BombStatus CurrentBombStatus = BombStatus::Inactive;
 
 	void HandleVehicleSpeed();
 	void Death();
