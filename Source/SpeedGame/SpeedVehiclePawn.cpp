@@ -10,6 +10,7 @@
 #include "NiagaraComponent.h"
 #include <Kismet/KismetMathLibrary.h>
 #include "SpeedGameGameModeBase.h"
+#include <Kismet/KismetStringLibrary.h>
 
 ASpeedVehiclePawn::ASpeedVehiclePawn()
 {
@@ -27,6 +28,7 @@ ASpeedVehiclePawn::ASpeedVehiclePawn()
 
 	CameraArmComp->TargetArmLength = 2000.f;
 	CameraArmComp->bUsePawnControlRotation = false;
+
 }
 
 
@@ -53,12 +55,16 @@ void ASpeedVehiclePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		}	
 		if (HandBrakeAction)
 		{
-			PlayerEnhancedInputComponent->BindAction(HandBrakeAction, ETriggerEvent::Triggered, this, &ASpeedVehiclePawn::HandBrake);
+			PlayerEnhancedInputComponent->BindAction(HandBrakeAction, ETriggerEvent::Started, this, &ASpeedVehiclePawn::HandBrake);
 			PlayerEnhancedInputComponent->BindAction(HandBrakeAction, ETriggerEvent::Completed, this, &ASpeedVehiclePawn::HandBrake);
 		}
 		if (LookAction)
 		{
 			PlayerEnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASpeedVehiclePawn::Look);
+		}
+		if (CameraAction)
+		{
+			PlayerEnhancedInputComponent->BindAction(CameraAction, ETriggerEvent::Started, this, &ASpeedVehiclePawn::CameraDistance);
 		}
 	}	
 }
@@ -85,7 +91,7 @@ void ASpeedVehiclePawn::Tick(float DeltaTime)
 	HandleVehicleSpeed();
 	
 	TimePassedSinceCameraInput += DeltaTime;
-	if (TimePassedSinceCameraInput > 1.5f && CurrentBombStatus != BombStatus::Explodeded)
+	if (TimePassedSinceCameraInput > 1.5f && CurrentBombStatus != BombStatus::Explodeded && CurrentCameraStatus == CameraStatus::Manual )
 		SwitchCameraStatusTo(CameraStatus::Follow);
 	if(CurrentBombStatus == BombStatus::Explodeded)
 		SwitchCameraStatusTo(CameraStatus::Manual);
@@ -130,11 +136,21 @@ void ASpeedVehiclePawn::SwitchCameraStatusTo(CameraStatus newCameraStatus)
 	switch (CurrentCameraStatus) 
 	{
 		case CameraStatus::Manual:
+			CameraArmComp->bEnableCameraRotationLag = false;
 			CameraArmComp->bUsePawnControlRotation = true;
 			break;
 		case CameraStatus::Follow:
+			CameraArmComp->bEnableCameraRotationLag = true;
+			CameraArmComp->SetRelativeRotation(FRotator(-15, 0, 0));
 			GetController()->ClientSetRotation(CameraArmComp->GetComponentRotation());
 			CameraArmComp->bUsePawnControlRotation = false;
+
+			break;
+		case CameraStatus::FirstPerson:
+			CameraArmComp->bEnableCameraRotationLag = false;
+			CameraArmComp->SetRelativeRotation(FRotator(0, 0, 0));
+			CameraArmComp->bUsePawnControlRotation = false;
+
 			break;
 	}
 }
@@ -181,6 +197,9 @@ void ASpeedVehiclePawn::HandBrake(const FInputActionInstance& ActionInstance)
 
 void ASpeedVehiclePawn::Look(const FInputActionInstance& ActionInstance)
 {
+	if (CurrentCameraStatus == CameraStatus::FirstPerson)
+		return;
+
 	TimePassedSinceCameraInput = 0.f;
 	SwitchCameraStatusTo(CameraStatus::Manual);
 
@@ -188,4 +207,21 @@ void ASpeedVehiclePawn::Look(const FInputActionInstance& ActionInstance)
 
 	AddControllerPitchInput((float)LookVector.Y * -1);
 	AddControllerYawInput((float)LookVector.X);
+}
+
+void ASpeedVehiclePawn::CameraDistance(const FInputActionInstance& ActionInstance)
+{
+	if (CameraArmComp->TargetArmLength >= 2500.f)
+	{
+		SwitchCameraStatusTo(CameraStatus::FirstPerson);
+		CameraArmComp->TargetArmLength = -500.f;
+	}
+	else if (CurrentCameraStatus == CameraStatus::FirstPerson)
+	{
+		SwitchCameraStatusTo(CameraStatus::Follow);
+		CameraArmComp->TargetArmLength = 1500.f;
+	}
+	else
+		CameraArmComp->TargetArmLength += 500.f;
+			
 }

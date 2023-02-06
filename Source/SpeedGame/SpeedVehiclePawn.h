@@ -11,7 +11,8 @@ UENUM()
 enum class CameraStatus : uint8
 {
 	Follow UMETA(DisplayName = "Follow"),
-	Manual UMETA(DisplayName = "Manual")
+	Manual UMETA(DisplayName = "Manual"),
+	FirstPerson UMETA(DisplayName = "FirstPerson")
 };
 
 UENUM(BlueprintType)
@@ -67,6 +68,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Controls|Input Actions")
 	UInputAction* LookAction;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Controls|Input Actions")
+	UInputAction* CameraAction;
 
 	// INPUT MAPPING //
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, category = "Controls|Input Mappings")
@@ -84,6 +88,7 @@ protected:
 	void Brake(const FInputActionInstance& ActionInstance);
 	void HandBrake(const FInputActionInstance& ActionInstance);
 	void Look(const FInputActionInstance& ActionInstance);
+	void CameraDistance(const FInputActionInstance& ActionInstance);
 
 #pragma endregion
 

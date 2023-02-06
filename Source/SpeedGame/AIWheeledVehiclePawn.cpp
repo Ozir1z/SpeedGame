@@ -201,10 +201,11 @@ void AAIWheeledVehiclePawn::SwitchLane()
 {
 	if (HasrecentlySwitchedLanes || 
 		CurrentRoadTile->GetRoadTileType() == RoadTileType::CornerRight ||
-		CurrentRoadTile->GetRoadTileType() == RoadTileType::CornerLeft)
+		CurrentRoadTile->GetRoadTileType() == RoadTileType::CornerLeft ||
+		GetVehicleMovement()->GetForwardSpeedMPH() <= 10)
 		return; // dont switch if on CD or in a corner
 
-	HasrecentlySwitchedLanes = true;
+	HasrecentlySwitchedLanes = true;	
 	SteerAmount = 0.1f;
 
 	FTimerHandle TimerHandle;

@@ -178,7 +178,7 @@ void URoadGenerator::SpawnNextRoadTile(FRotator& rotatorAdjustment, TSubclassOf<
 
 void URoadGenerator::SpawnAI()
 {
-	int forwardOrOncomming = rand() & 1; // 50 % forward 0, oncomming 1
+	int forwardOrOncomming = rand() % 2; // 50 % forward 0, oncomming 1
 
 	UArrowComponent* arrowDirection = forwardOrOncomming == 0 ? CurrentRoadTile->GetForwardSpawnPoint() : CurrentRoadTile->GetOncommingSpawnPoint();
 	AAIWheeledVehiclePawn* aiVehicle = GetWorld()->SpawnActor<AAIWheeledVehiclePawn>(AICarBP, arrowDirection->GetComponentLocation(), arrowDirection->GetComponentRotation());
