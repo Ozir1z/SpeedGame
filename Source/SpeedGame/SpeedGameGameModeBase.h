@@ -48,7 +48,7 @@ protected:
 	void AddHighScore(FString PlayerNameToSave);
 
 private:
-	bool IsTimerGoing = true; // make this false and call it when driving off starting platform
+	bool IsTimerGoing = false;
 	float Timer = 0;
 
 	int PlayerIndexToSetName;

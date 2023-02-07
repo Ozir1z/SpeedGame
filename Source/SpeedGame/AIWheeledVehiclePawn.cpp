@@ -82,6 +82,9 @@ void AAIWheeledVehiclePawn::DriveInLane(float deltaSeconds)
 	GetVehicleMovement()->SetThrottleInput(throttleInput);
 
 	FVector targetPoint = GetCurrentaneSpline()->GetLocationAtDistanceAlongSpline(TargetSplineDistance, ESplineCoordinateSpace::World);
+	if (targetPoint.IsZero())
+		return;
+
 	double distance = FVector::Dist(targetPoint, GetActorLocation());
 
 	if (distance < CheckGap)

@@ -27,6 +27,8 @@ public:
 	ARoadTile();
 	virtual void Tick(float DeltaTime) override;
 	
+	bool IsTrialtrack = false;
+
 	void Init(class URoadGenerator* roadGenerator);
 
 	FAttachPointData GetAttachPointData();

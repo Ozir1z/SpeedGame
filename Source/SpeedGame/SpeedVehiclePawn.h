@@ -18,6 +18,7 @@ enum class CameraStatus : uint8
 UENUM(BlueprintType)
 enum class BombStatus : uint8
 {
+	None UMETA(DisplayName = "None"),
 	Inactive UMETA(DisplayName = "Inactive"),
 	Active UMETA(DisplayName = "Active"),
 	Explodeded UMETA(DisplayName = "Explodeded")
@@ -43,7 +44,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void BeginPlay() override;
 
-	void HandleVehicleGoingOffroad();
+	UFUNCTION(BlueprintCallable, Category = "Speedgame")
+	void Init();
+
+	void HandleVehicleGoingOffroad(bool isOnTrialTrack = false);
 
 protected:
 	virtual void PawnClientRestart() override;
@@ -101,7 +105,7 @@ protected:
 #pragma endregion
 
 	UPROPERTY(BluePrintReadOnly)
-	BombStatus CurrentBombStatus = BombStatus::Inactive;
+	BombStatus CurrentBombStatus = BombStatus::None;
 
 private:
 	UPROPERTY()
@@ -112,4 +116,6 @@ private:
 	void SwitchCameraStatusTo(CameraStatus newCameraStatus);
 
 	float TimePassedSinceCameraInput = 0.f;
+	FVector PlayerStartLocation;
+	FRotator PlayerStartRotation;
 };

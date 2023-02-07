@@ -108,7 +108,7 @@ void ARoadTile::OnOverlapForwardBegin(UPrimitiveComponent* OverlappedComp, AActo
 {
 	if (AAIWheeledVehiclePawn* aiVehicle = Cast<AAIWheeledVehiclePawn>(OtherActor))
 	{
-		if (RoadGenerator && RoadGenerator->SpawnOneCarDebug && !RoadGenerator->IsDebugTrack)
+		if (RoadGenerator && RoadGenerator->SpawnOneCarDebug && !IsTrialtrack)
 			GenerateAndDestroyRoad();
 
 		SetCurrentRoadTileForVehicleOrDestroy(NextTile, aiVehicle, LaneStatus::ForwardLeft, LaneStatus::ForwardRight);
@@ -129,7 +129,7 @@ void ARoadTile::OnSideTriggerBoxOverlapEnd(class UPrimitiveComponent* Overlapped
 	if (AAIWheeledVehiclePawn* aiVehicle = Cast<AAIWheeledVehiclePawn>(OtherActor))
 		aiVehicle->CurrentCarStatus = CarStatus::Dying;
 	if (ASpeedVehiclePawn* bus = Cast<ASpeedVehiclePawn>(OtherActor))
-		bus->HandleVehicleGoingOffroad();
+		bus->HandleVehicleGoingOffroad(IsTrialtrack);
 }
 
 void ARoadTile::SetCurrentRoadTileForVehicleOrDestroy(ARoadTile* roadTileToSet, AAIWheeledVehiclePawn* aiVehicle, LaneStatus LeftLaneStatus, LaneStatus RightLaneStatus)
@@ -148,6 +148,9 @@ void ARoadTile::SetCurrentRoadTileForVehicleOrDestroy(ARoadTile* roadTileToSet, 
 
 void ARoadTile::GenerateAndDestroyRoad()
 {
+	if (IsTrialtrack)
+		return;
+
 	if (RoadGenerator)
 		RoadGenerator->AddRoadTile();
 

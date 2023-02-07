@@ -72,10 +72,28 @@ void ASpeedVehiclePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 void ASpeedVehiclePawn::BeginPlay()
 {
 	Super::BeginPlay();
+	PlayerStartLocation = GetActorLocation();
+	PlayerStartRotation = GetActorRotation();
 }
 
-void ASpeedVehiclePawn::HandleVehicleGoingOffroad()
+void ASpeedVehiclePawn::Init()
 {
+	CurrentBombStatus = BombStatus::Inactive;
+	FVector speedboost = GetActorForwardVector() * 1500;
+	GetMesh()->AddImpulse(speedboost, NAME_None, true);
+}
+
+void ASpeedVehiclePawn::HandleVehicleGoingOffroad(bool isOnTrialTrack)
+{
+	if (isOnTrialTrack)
+	{
+		USkeletalMesh* originalMesh = GetMesh()->GetSkeletalMeshAsset();
+		GetMesh()->SetSkeletalMeshAsset(SecondaryMesh);
+		GetMesh()->SetSkeletalMeshAsset(originalMesh);
+		GetMesh()->SetWorldLocationAndRotation(PlayerStartLocation, PlayerStartRotation, false, nullptr, ETeleportType::TeleportPhysics);
+		return;
+	}
+
 	if (CurrentBombStatus == BombStatus::Explodeded)
 		return;
 
@@ -87,6 +105,15 @@ void ASpeedVehiclePawn::HandleVehicleGoingOffroad()
 void ASpeedVehiclePawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (CurrentBombStatus == BombStatus::None && GetActorLocation().Z <= -500)
+	{
+		USkeletalMesh* originalMesh = GetMesh()->GetSkeletalMeshAsset();
+		GetMesh()->SetSkeletalMeshAsset(SecondaryMesh);
+		GetMesh()->SetSkeletalMeshAsset(originalMesh);
+		GetMesh()->SetWorldLocationAndRotation(PlayerStartLocation, PlayerStartRotation, false, nullptr, ETeleportType::TeleportPhysics);
+		return;
+	}
 
 	HandleVehicleSpeed();
 	
@@ -104,8 +131,16 @@ void ASpeedVehiclePawn::HandleVehicleSpeed()
 	int speed = static_cast<int>(GetVehicleMovementComponent()->GetForwardSpeedMPH());
 	if (speed <= 0) // make a maxspeed variable in gamemode, so we can make difficulties if we want to
 		speed = 0;
+
+	gameMode->UpdateSpeed(speed);
+	if (CurrentBombStatus == BombStatus::None)
+		return;
+
 	if (speed >= 30 && CurrentBombStatus == BombStatus::Inactive)
+	{
 		CurrentBombStatus = BombStatus::Active;
+		gameMode->StartGame();
+	}
 	if (speed < 30 && CurrentBombStatus == BombStatus::Active)
 	{
 		HandleVehicleGoingOffroad();
@@ -115,8 +150,6 @@ void ASpeedVehiclePawn::HandleVehicleSpeed()
 		speed = 0;
 		gameMode->StopGame();
 	}
-
-	gameMode->UpdateSpeed(speed);
 }
 
 void ASpeedVehiclePawn::Death()
@@ -173,27 +206,32 @@ void ASpeedVehiclePawn::PawnClientRestart()
 
 void ASpeedVehiclePawn::Steer(const FInputActionInstance& ActionInstance)
 {
-		float ActionVector = ActionInstance.GetValue().Get<float>();
-		GetVehicleMovement()->SetSteeringInput(ActionVector);
+	float ActionVector = ActionInstance.GetValue().Get<float>();
+	GetVehicleMovement()->SetSteeringInput(ActionVector);
 }
 
 void ASpeedVehiclePawn::Throttle(const FInputActionInstance& ActionInstance)
 {
-		
-		float ActionVector = ActionInstance.GetValue().Get<float>();
-		GetVehicleMovement()->SetThrottleInput(ActionVector);
+	if (CurrentBombStatus == BombStatus::Inactive)
+		return;
+	float ActionVector = ActionInstance.GetValue().Get<float>();
+	GetVehicleMovement()->SetThrottleInput(ActionVector);
 }
 
 void ASpeedVehiclePawn::Brake(const FInputActionInstance& ActionInstance)
 {
-		float ActionVector = ActionInstance.GetValue().Get<float>();
-		GetVehicleMovement()->SetBrakeInput(ActionVector);
+	if (CurrentBombStatus == BombStatus::Inactive)
+		return;
+	float ActionVector = ActionInstance.GetValue().Get<float>();
+	GetVehicleMovement()->SetBrakeInput(ActionVector);
 }
 
 void ASpeedVehiclePawn::HandBrake(const FInputActionInstance& ActionInstance)
 {
-		bool ActionVector = ActionInstance.GetValue().Get<bool>();
-		GetVehicleMovement()->SetHandbrakeInput(ActionVector);
+	if (CurrentBombStatus == BombStatus::Inactive)
+		return;
+	bool ActionVector = ActionInstance.GetValue().Get<bool>();
+	GetVehicleMovement()->SetHandbrakeInput(ActionVector);
 }
 
 

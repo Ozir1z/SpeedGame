@@ -3,6 +3,7 @@
 
 #include "SpeedGameGameModeBase.h"
 #include "SpeedSaveGame.h"
+#include "RoadGenerator.h"
 #include "SpeedGameInstance.h"
 
 ASpeedGameGameModeBase::ASpeedGameGameModeBase()
