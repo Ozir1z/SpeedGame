@@ -124,8 +124,10 @@ void ASpeedVehiclePawn::Death()
 	if (DeathParticle)
 		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathParticle, GetActorLocation(), GetActorRotation());
 	double forwardSpeedAbs = UKismetMathLibrary::Abs(GetVehicleMovementComponent()->GetForwardSpeed());
+
 	GetMesh()->SetEnableGravity(false);
 	GetMesh()->SetSkeletalMeshAsset(SecondaryMesh);
+
 	FVector impulse = (GetActorForwardVector() * forwardSpeedAbs) + (GetActorUpVector() * 500);
 	GetMesh()->AddVelocityChangeImpulseAtLocation(impulse, GetActorLocation(), TEXT("Body"));
 }
@@ -140,11 +142,10 @@ void ASpeedVehiclePawn::SwitchCameraStatusTo(CameraStatus newCameraStatus)
 			CameraArmComp->bUsePawnControlRotation = true;
 			break;
 		case CameraStatus::Follow:
-			CameraArmComp->bEnableCameraRotationLag = true;
 			CameraArmComp->SetRelativeRotation(FRotator(-15, 0, 0));
 			GetController()->ClientSetRotation(CameraArmComp->GetComponentRotation());
+			CameraArmComp->bEnableCameraRotationLag = true;
 			CameraArmComp->bUsePawnControlRotation = false;
-
 			break;
 		case CameraStatus::FirstPerson:
 			CameraArmComp->bEnableCameraRotationLag = false;
@@ -178,6 +179,7 @@ void ASpeedVehiclePawn::Steer(const FInputActionInstance& ActionInstance)
 
 void ASpeedVehiclePawn::Throttle(const FInputActionInstance& ActionInstance)
 {
+		
 		float ActionVector = ActionInstance.GetValue().Get<float>();
 		GetVehicleMovement()->SetThrottleInput(ActionVector);
 }

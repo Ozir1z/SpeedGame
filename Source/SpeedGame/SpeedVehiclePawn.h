@@ -23,6 +23,14 @@ enum class BombStatus : uint8
 	Explodeded UMETA(DisplayName = "Explodeded")
 };
 
+
+UENUM(BlueprintType)
+enum class InputType : uint8
+{
+	Keyboard UMETA(DisplayName = "Keyboard"),
+	Controller UMETA(DisplayName = "Controller")
+};
+
 // TODO: Make base class and base blueprint to handle overlapping/duplicate code
 UCLASS()
 class SPEEDGAME_API ASpeedVehiclePawn : public AWheeledVehiclePawn
@@ -79,8 +87,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, category = "Controls|Input Mappings")
 	int32 InputMappingPriority = 0;
 
-	UPROPERTY(BluePrintReadOnly)
-	BombStatus CurrentBombStatus = BombStatus::Inactive;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, category = "Controls")
+	InputType CurrentInputType = InputType::Keyboard;
 
 	// INPUT FUCNTIONS //
 	void Steer(const FInputActionInstance& ActionInstance);
@@ -91,6 +99,9 @@ protected:
 	void CameraDistance(const FInputActionInstance& ActionInstance);
 
 #pragma endregion
+
+	UPROPERTY(BluePrintReadOnly)
+	BombStatus CurrentBombStatus = BombStatus::Inactive;
 
 private:
 	UPROPERTY()
