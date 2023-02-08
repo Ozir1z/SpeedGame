@@ -7,12 +7,13 @@
 #include "InputAction.h"
 #include "SpeedVehiclePawn.generated.h"
 
-UENUM()
+UENUM(BlueprintType)
 enum class CameraStatus : uint8
 {
 	Follow UMETA(DisplayName = "Follow"),
 	Manual UMETA(DisplayName = "Manual"),
-	FirstPerson UMETA(DisplayName = "FirstPerson")
+	FirstPerson UMETA(DisplayName = "FirstPerson"),
+	InMenu UMETA(DisplayName = "InMenu")
 };
 
 UENUM(BlueprintType)
@@ -52,10 +53,10 @@ public:
 protected:
 	virtual void PawnClientRestart() override;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, category = "Controls| Camera")
 	class USpringArmComponent* CameraArmComp;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, category = "Controls| Camera")
 	class UCameraComponent* CameraComp;
 
 	UPROPERTY(EditAnywhere)
@@ -103,17 +104,18 @@ protected:
 	void CameraDistance(const FInputActionInstance& ActionInstance);
 
 #pragma endregion
+	UFUNCTION(BlueprintCallable, Category = "Speedgame")
+	void SwitchCameraStatusTo(CameraStatus newCameraStatus);
 
 	UPROPERTY(BluePrintReadOnly)
 	BombStatus CurrentBombStatus = BombStatus::None;
 
-private:
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	CameraStatus CurrentCameraStatus = CameraStatus::Follow;
 
+private:
 	void HandleVehicleSpeed();
 	void Death();
-	void SwitchCameraStatusTo(CameraStatus newCameraStatus);
 	int GameSpeed = 50;
 	float TimePassedSinceCameraInput = 0.f;
 	FVector PlayerStartLocation;

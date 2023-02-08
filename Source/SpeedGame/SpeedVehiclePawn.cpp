@@ -79,7 +79,7 @@ void ASpeedVehiclePawn::BeginPlay()
 void ASpeedVehiclePawn::Init()
 {
 	CurrentBombStatus = BombStatus::Inactive;
-	FVector speedboost = GetActorForwardVector() * 1500;
+	FVector speedboost = GetActorForwardVector() * 2000;
 	GetMesh()->AddImpulse(speedboost, NAME_None, true);
 }
 
@@ -112,7 +112,7 @@ void ASpeedVehiclePawn::Tick(float DeltaTime)
 	HandleVehicleSpeed();
 	
 	TimePassedSinceCameraInput += DeltaTime;
-	if (TimePassedSinceCameraInput > 1.5f && CurrentBombStatus != BombStatus::Explodeded && CurrentCameraStatus == CameraStatus::Manual )
+	if (TimePassedSinceCameraInput > 1.5f && CurrentBombStatus != BombStatus::Explodeded && CurrentCameraStatus == CameraStatus::Manual)
 		SwitchCameraStatusTo(CameraStatus::Follow);
 	if(CurrentBombStatus == BombStatus::Explodeded)
 		SwitchCameraStatusTo(CameraStatus::Manual);
@@ -165,7 +165,7 @@ void ASpeedVehiclePawn::SwitchCameraStatusTo(CameraStatus newCameraStatus)
 	switch (CurrentCameraStatus) 
 	{
 		case CameraStatus::Manual:
-			//CameraArmComp->bEnableCameraRotationLag = false;
+		case CameraStatus::InMenu:
 			CameraArmComp->bUsePawnControlRotation = true;
 			break;
 		case CameraStatus::Follow:
@@ -234,7 +234,8 @@ void ASpeedVehiclePawn::Look(const FInputActionInstance& ActionInstance)
 		return;
 
 	TimePassedSinceCameraInput = 0.f;
-	SwitchCameraStatusTo(CameraStatus::Manual);
+	if(CurrentCameraStatus != CameraStatus::InMenu)
+		SwitchCameraStatusTo(CameraStatus::Manual);
 
 	FVector2D LookVector = ActionInstance.GetValue().Get<FVector2D>();
 

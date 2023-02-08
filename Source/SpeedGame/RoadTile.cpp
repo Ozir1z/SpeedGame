@@ -15,7 +15,7 @@ ARoadTile::ARoadTile()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	CustomRootComponent = CreateDefaultSubobject<USphereComponent>(TEXT("RootComponent"));
+	CustomRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 	RoadMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RoadMesh"));
 	NextRoadPoint = CreateDefaultSubobject<UArrowComponent>(TEXT("NextRoadPoint"));
 	SpawnPoint = CreateDefaultSubobject<UArrowComponent>(TEXT("SpawnPoint"));
@@ -58,9 +58,10 @@ ARoadTile::ARoadTile()
 	OncommingRightLane->SetupAttachment(RootComponent);
 }
 
-void ARoadTile::Init(URoadGenerator* roadGenerator)
+void ARoadTile::Init(URoadGenerator* roadGenerator, FLinearColor color)
 {
 	RoadGenerator = roadGenerator;
+	DynamicMaterial_RoadMesh->SetVectorParameterValue(TEXT("LineColor"), color);
 }
 
 void ARoadTile::BeginPlay()
@@ -74,6 +75,10 @@ void ARoadTile::BeginPlay()
 
 	LeftSideTriggerBox->OnComponentEndOverlap.AddDynamic(this, &ARoadTile::OnSideTriggerBoxOverlapEnd);
 	RightSideTriggerBox->OnComponentEndOverlap.AddDynamic(this, &ARoadTile::OnSideTriggerBoxOverlapEnd);
+	
+	Material = RoadMeshComponent->GetMaterial(0);
+	DynamicMaterial_RoadMesh = UMaterialInstanceDynamic::Create(Material, this);
+	RoadMeshComponent->SetMaterial(0, DynamicMaterial_RoadMesh);
 }
 
 

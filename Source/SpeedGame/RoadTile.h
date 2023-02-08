@@ -29,7 +29,7 @@ public:
 	
 	bool IsTrialtrack = false;
 
-	void Init(class URoadGenerator* roadGenerator);
+	void Init(class URoadGenerator* roadGenerator, FLinearColor color);
 
 	FAttachPointData GetAttachPointData();
 	RoadTileType GetRoadTileType();
@@ -57,8 +57,11 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	UPROPERTY(VisibleAnywhere, Category = "SpeedGame | Material")
+	UMaterialInterface* Material;
+
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* CustomRootComponent;
+	class USceneComponent* CustomRootComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* RoadMeshComponent;
@@ -96,6 +99,7 @@ protected:
 
 private:
 	class URoadGenerator* RoadGenerator;
+	UMaterialInstanceDynamic* DynamicMaterial_RoadMesh;
 
 	void GenerateAndDestroyRoad();
 	void SetCurrentRoadTileForVehicleOrDestroy(class ARoadTile* roadTileToSet, class AAIWheeledVehiclePawn* aiVehicle, LaneStatus LeftLaneStatus,LaneStatus RightLaneStatus);

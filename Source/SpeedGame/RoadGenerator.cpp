@@ -4,6 +4,7 @@
 #include "RoadTile.h"
 #include "AIWheeledVehiclePawn.h"
 #include "Components/ArrowComponent.h"
+#include "SpeedGameGameModeBase.h"
 
 URoadGenerator::URoadGenerator()
 {
@@ -40,6 +41,8 @@ void URoadGenerator::BeginPlay()
 	RoadTilesStraightCollection.Add(RoadTileBPStraight);
 	RoadTilesStraightCollection.Add(RoadTileBPCornerLeft);
 	RoadTilesStraightCollection.Add(RoadTileBPCornerRight);
+
+
 }
 
 void URoadGenerator::Init()
@@ -54,16 +57,6 @@ void URoadGenerator::Init()
 		AddRoadTile();
 	}
 
-}
-
-void URoadGenerator::DeleteTrialTrack()
-{
-	while (TrialTrackFirstRoadTile != nullptr && TrialTrackFirstRoadTile->IsTrialtrack)
-	{
-		TrialTrackFirstRoadTile->Destroy();
-		TrialTrackFirstRoadTile->IsTrialtrack = false;
-		TrialTrackFirstRoadTile = TrialTrackFirstRoadTile->NextTile;
-	}
 }
 
 void URoadGenerator::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -158,7 +151,12 @@ void URoadGenerator::AddRoadTile()
 void URoadGenerator::SpawnNextRoadTile(FRotator& rotatorAdjustment, TSubclassOf<ARoadTile>& roadTileBPToSpawn, bool isTrialTrack)
 {
 	ARoadTile* nextRoadTile = GetWorld()->SpawnActor<ARoadTile>(roadTileBPToSpawn, NextSpawnPointData.Location, rotatorAdjustment);
-	nextRoadTile->Init(this);
+	
+	ASpeedGameGameModeBase* gameMode = (ASpeedGameGameModeBase*)GetWorld()->GetAuthGameMode();
+	if (!gameMode)
+		return;
+
+	nextRoadTile->Init(this, gameMode->TrackColor);
 	nextRoadTile->IsTrialtrack = isTrialTrack;
 	if (CurrentRoadTile)
 		CurrentRoadTile->NextTile = nextRoadTile;
@@ -266,3 +264,28 @@ void URoadGenerator::GenerateTrialTrack()
 }
 
 
+void URoadGenerator::DeleteTrialTrack()
+{
+	while (TrialTrackFirstRoadTile != nullptr && TrialTrackFirstRoadTile->IsTrialtrack)
+	{
+		TrialTrackFirstRoadTile->Destroy();
+		TrialTrackFirstRoadTile->IsTrialtrack = false;
+		TrialTrackFirstRoadTile = TrialTrackFirstRoadTile->NextTile;
+	}
+}
+
+void URoadGenerator::UpdateTrialTrack()
+{
+	ASpeedGameGameModeBase* gameMode = (ASpeedGameGameModeBase*)GetWorld()->GetAuthGameMode();
+	while (TrialTrackFirstRoadTile != nullptr && TrialTrackFirstRoadTile->IsTrialtrack)
+	{
+		TrialTrackFirstRoadTile->IsTrialtrack = false;
+		TrialTrackFirstRoadTile->Init(this, gameMode->TrackColor);
+		TrialTrackFirstRoadTile = TrialTrackFirstRoadTile->NextTile;
+	}
+	while (TrialTrackFirstRoadTile != nullptr && !TrialTrackFirstRoadTile->IsTrialtrack)
+	{
+		TrialTrackFirstRoadTile->IsTrialtrack = true;
+		TrialTrackFirstRoadTile = TrialTrackFirstRoadTile->NextTile;
+	}
+}

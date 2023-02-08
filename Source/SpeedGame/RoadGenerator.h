@@ -41,6 +41,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Road Generation | Road")
 	void GenerateTrialTrack();
 
+	UFUNCTION(BlueprintCallable, Category = "Road Generation | Road")
+	void UpdateTrialTrack();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -93,5 +96,5 @@ private:
 
 	void SpawnAI();
 
-	ARoadTile* TrialTrackFirstRoadTile;
+	ARoadTile* TrialTrackFirstRoadTile = nullptr;
 };
