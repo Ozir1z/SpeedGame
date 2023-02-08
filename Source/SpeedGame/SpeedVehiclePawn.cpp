@@ -86,13 +86,7 @@ void ASpeedVehiclePawn::Init()
 void ASpeedVehiclePawn::HandleVehicleGoingOffroad(bool isOnTrialTrack)
 {
 	if (isOnTrialTrack)
-	{
-		USkeletalMesh* originalMesh = GetMesh()->GetSkeletalMeshAsset();
-		GetMesh()->SetSkeletalMeshAsset(SecondaryMesh);
-		GetMesh()->SetSkeletalMeshAsset(originalMesh);
-		GetMesh()->SetWorldLocationAndRotation(PlayerStartLocation, PlayerStartRotation, false, nullptr, ETeleportType::TeleportPhysics);
 		return;
-	}
 
 	if (CurrentBombStatus == BombStatus::Explodeded)
 		return;
@@ -136,12 +130,12 @@ void ASpeedVehiclePawn::HandleVehicleSpeed()
 	if (CurrentBombStatus == BombStatus::None)
 		return;
 
-	if (speed >= 30 && CurrentBombStatus == BombStatus::Inactive)
+	if (speed >= GameSpeed && CurrentBombStatus == BombStatus::Inactive)
 	{
 		CurrentBombStatus = BombStatus::Active;
 		gameMode->StartGame();
 	}
-	if (speed < 30 && CurrentBombStatus == BombStatus::Active)
+	if (speed < GameSpeed && CurrentBombStatus == BombStatus::Active)
 	{
 		HandleVehicleGoingOffroad();
 	}
@@ -171,7 +165,7 @@ void ASpeedVehiclePawn::SwitchCameraStatusTo(CameraStatus newCameraStatus)
 	switch (CurrentCameraStatus) 
 	{
 		case CameraStatus::Manual:
-			CameraArmComp->bEnableCameraRotationLag = false;
+			//CameraArmComp->bEnableCameraRotationLag = false;
 			CameraArmComp->bUsePawnControlRotation = true;
 			break;
 		case CameraStatus::Follow:
@@ -184,7 +178,6 @@ void ASpeedVehiclePawn::SwitchCameraStatusTo(CameraStatus newCameraStatus)
 			CameraArmComp->bEnableCameraRotationLag = false;
 			CameraArmComp->SetRelativeRotation(FRotator(0, 0, 0));
 			CameraArmComp->bUsePawnControlRotation = false;
-
 			break;
 	}
 }

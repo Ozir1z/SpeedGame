@@ -35,6 +35,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Road Generation | Road")
 	void Init();
 
+	UFUNCTION(BlueprintCallable, Category = "Road Generation | Road")
+	void DeleteTrialTrack();
+
+	UFUNCTION(BlueprintCallable, Category = "Road Generation | Road")
+	void GenerateTrialTrack();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -86,5 +92,6 @@ private:
 	TSubclassOf<class AAIWheeledVehiclePawn> AICarBP;
 
 	void SpawnAI();
-	void GenerateTrialTrack();
+
+	ARoadTile* TrialTrackFirstRoadTile;
 };

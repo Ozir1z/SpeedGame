@@ -41,9 +41,6 @@ class SPEEDGAME_API AAIWheeledVehiclePawn : public AWheeledVehiclePawn
 
 	AAIWheeledVehiclePawn();
 
-	UPROPERTY(EditAnywhere, Category = "SpeedGame | speed")
-	float MaxSpeed = 50.f;
-
 public:
 	UPROPERTY(EditAnywhere)
 	class USceneComponent* LeftPoint;
@@ -58,12 +55,18 @@ public:
 	UPROPERTY(BluePrintReadOnly)
 	CarStatus CurrentCarStatus = CarStatus::Alive;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SpeedGame | speed")
+	UPROPERTY(BlueprintReadOnly, Category = "SpeedGame | Car")
 	CarType CurrentCarType;
+
+	UPROPERTY(BlueprintReadOnly, Category = "SpeedGame | Car")
+	float MaxSpeed = 50.f;
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float deltaSeconds) override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SpeedGame | Car")
+	bool IsParkedCar = false;
 
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* DeathParticle;
@@ -76,17 +79,18 @@ protected:
 	float SteerAmount = 0.f;
 	float BrakeAmount = 0.f;
 
-	UPROPERTY(EditAnywhere, Category = "SpeedGame | speed")
+	UPROPERTY(EditAnywhere, Category = "SpeedGame | Car")
 	TArray<float> VariableMaxSpeeds = { 40.f, 50.f, 60.f};
 
 	class ARoadTile* CurrentRoadTile = nullptr;
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "SpeedGame | speed")
+	UFUNCTION(BlueprintImplementableEvent, Category = "SpeedGame | Car")
 	void ChangeColor();
 
 private:
 	class USplineComponent* GetCurrentaneSpline();
-
+	
+	FVector StartingLocation;
 	bool HasrecentlySwitchedLanes = false;
 	bool StartedDying = false;
 	float DeathTimer = rand() % 7 + 5;

@@ -23,16 +23,12 @@ void URoadGenerator::BeginPlay()
 		UE_LOG(LogTemp, Display, TEXT("AICarBP or RoadTileBPs are not set in RoadGenerator blueprint"));
 		return;
 	}
-
-	GenerateTrialTrack();
+	
+	FirstSpawnPoint->SetRelativeLocation(FVector(3000, 0, 0));
+	TrialTrackStartPoint->SetRelativeLocationAndRotation(FVector(0, 3000, 0), FRotator(0,90,0));
 
 	if (SpawnOneCarDebug)
 		SpawnOneCarDebugCompleted = false;
-
-	NextSpawnPointData = FAttachPointData{
-		FirstSpawnPoint->GetComponentLocation(),
-		FirstSpawnPoint->GetComponentQuat().Rotator()
-	};
 
 	RoadTilesTopCollection.Add(RoadTileBPSlopeTop);
 	RoadTilesTopCollection.Add(RoadTileBPStraight);
@@ -48,9 +44,25 @@ void URoadGenerator::BeginPlay()
 
 void URoadGenerator::Init()
 {
+	NextSpawnPointData = FAttachPointData{
+		FirstSpawnPoint->GetComponentLocation(),
+		FirstSpawnPoint->GetComponentQuat().Rotator()
+	};
+	DeleteTrialTrack();
 	for (int i = 0; i < (AmountOfRoadPiecesAhead + InitialStraight); i++)
 	{
 		AddRoadTile();
+	}
+
+}
+
+void URoadGenerator::DeleteTrialTrack()
+{
+	while (TrialTrackFirstRoadTile != nullptr && TrialTrackFirstRoadTile->IsTrialtrack)
+	{
+		TrialTrackFirstRoadTile->Destroy();
+		TrialTrackFirstRoadTile->IsTrialtrack = false;
+		TrialTrackFirstRoadTile = TrialTrackFirstRoadTile->NextTile;
 	}
 }
 
@@ -111,7 +123,6 @@ void URoadGenerator::AddRoadTile()
 	if (CurrentHillStatus == HillStatus::None)
 	{
 		int randomIndex = randomIndex = rand() % RoadTilesStraightCollection.Num();
-		//roadTileBPToSpawn = RoadTilesStraightCollection[randomIndex];
 
 		// make possibly bigger corners than 1 tile
 		if ((LastRoadTileType == RoadTileType::CornerLeft ||
@@ -195,7 +206,7 @@ void URoadGenerator::SpawnAI()
 
 void URoadGenerator::GenerateTrialTrack()
 {
-	ARoadTile* firstRoadTile = nullptr;
+	TrialTrackFirstRoadTile = nullptr;
 	NextSpawnPointData = FAttachPointData{
 		TrialTrackStartPoint->GetComponentLocation(),
 		TrialTrackStartPoint->GetComponentQuat().Rotator()
@@ -203,8 +214,8 @@ void URoadGenerator::GenerateTrialTrack()
 	for (int i = 0; i < 7; i++)
 	{
 		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPStraight, true);
-		if (!firstRoadTile)
-			firstRoadTile = CurrentRoadTile;
+		if (!TrialTrackFirstRoadTile)
+			TrialTrackFirstRoadTile = CurrentRoadTile;
 	}	
 	for (int i = 0; i < 12; i++)
 	{
@@ -250,8 +261,8 @@ void URoadGenerator::GenerateTrialTrack()
 	}
 
 	//make it a loop
-	CurrentRoadTile->NextTile = firstRoadTile;
-	firstRoadTile->PerviousTile = CurrentRoadTile;
+	CurrentRoadTile->NextTile = TrialTrackFirstRoadTile;
+	TrialTrackFirstRoadTile->PerviousTile = CurrentRoadTile;
 }
 
 

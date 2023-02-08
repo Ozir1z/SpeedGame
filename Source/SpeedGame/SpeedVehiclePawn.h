@@ -114,7 +114,7 @@ private:
 	void HandleVehicleSpeed();
 	void Death();
 	void SwitchCameraStatusTo(CameraStatus newCameraStatus);
-
+	int GameSpeed = 50;
 	float TimePassedSinceCameraInput = 0.f;
 	FVector PlayerStartLocation;
 	FRotator PlayerStartRotation;

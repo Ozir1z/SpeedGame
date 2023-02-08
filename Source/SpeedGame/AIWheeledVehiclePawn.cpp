@@ -23,7 +23,7 @@ AAIWheeledVehiclePawn::AAIWheeledVehiclePawn()
 void AAIWheeledVehiclePawn::BeginPlay()
 {
 	Super::BeginPlay();
-
+	StartingLocation = GetActorLocation();
 	GetRandomCarTypeAndSetSpeed();
 }
 
@@ -31,7 +31,15 @@ void AAIWheeledVehiclePawn::Tick(float deltaSeconds)
 {
 	Super::Tick(deltaSeconds);
 
-	if (CurrentRoadTile && GetActorLocation().Z < CurrentRoadTile->GetActorLocation().Z - 300)
+	if (IsParkedCar)
+	{
+		if(GetActorLocation().Z <= (StartingLocation.Z - 300))
+			HandleVehicleGoingOffroad(deltaSeconds);
+		return;
+	}
+	
+
+	if (CurrentRoadTile && GetActorLocation().Z <= (CurrentRoadTile->GetActorLocation().Z - 300))
 		CurrentCarStatus = CarStatus::Dying;
 
 	if (CurrentCarStatus == CarStatus::Dead)
