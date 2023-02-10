@@ -51,6 +51,7 @@ class SPEEDGAME_API AAIWheeledVehiclePawn : public AWheeledVehiclePawn
 public:
 
 	void Init(class ARoadTile* currentRoadTile, DriveDirection direction);
+	void SetCurrentRoadTile(class ARoadTile* currentRoadTile);
 
 	UPROPERTY(EditAnywhere)
 	class USceneComponent* LeftPoint;
@@ -111,7 +112,6 @@ private:
 	float CurrenDeathTimer = 0;
 	
 	void SwitchLane();
-	void SetCurrentRoadTile(class ARoadTile* currentRoadTile);
 	bool IsOtherCarOnOtherSideOfTheRoad(class AAIWheeledVehiclePawn* aiCar);
 
 	void GetRandomCarTypeAndSetSpeed();

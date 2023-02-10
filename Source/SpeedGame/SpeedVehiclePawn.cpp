@@ -175,8 +175,13 @@ void ASpeedVehiclePawn::SwitchCameraStatusTo(CameraStatus newCameraStatus)
 	CurrentCameraStatus = newCameraStatus;
 	switch (CurrentCameraStatus) 
 	{
-		case CameraStatus::Manual:
 		case CameraStatus::InMenu:
+			CameraArmComp->SetRelativeRotation(FRotator(-15, 0, 0));
+			GetController()->ClientSetRotation(CameraArmComp->GetComponentRotation());
+			CameraArmComp->bEnableCameraRotationLag = true;
+			CameraArmComp->bUsePawnControlRotation = false;
+			break;
+		case CameraStatus::Manual:
 			CameraArmComp->bUsePawnControlRotation = true;
 			break;
 		case CameraStatus::Follow:
@@ -245,8 +250,8 @@ void ASpeedVehiclePawn::Look(const FInputActionInstance& ActionInstance)
 		return;
 
 	TimePassedSinceCameraInput = 0.f;
-	if(CurrentCameraStatus != CameraStatus::InMenu)
-		SwitchCameraStatusTo(CameraStatus::Manual);
+	//if(CurrentCameraStatus != CameraStatus::InMenu)
+	SwitchCameraStatusTo(CameraStatus::Manual);
 
 	FVector2D LookVector = ActionInstance.GetValue().Get<FVector2D>();
 

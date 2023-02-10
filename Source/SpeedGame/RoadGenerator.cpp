@@ -153,34 +153,46 @@ void URoadGenerator::SpawnNextRoadTile(FRotator& rotatorAdjustment, TSubclassOf<
 
 	nextRoadTile->Init(this, gameMode->TrackColor);
 	nextRoadTile->IsTrialtrack = isTrialTrack;
-	if (CurrentRoadTile)
-		CurrentRoadTile->NextTile = nextRoadTile;
-
-	nextRoadTile->PreviousTile = CurrentRoadTile;
-
 	LastRoadTileType = nextRoadTile->GetRoadTileType();
 	NextSpawnPointData = nextRoadTile->GetAttachPointData();
 
-	CurrentRoadTile = nextRoadTile;
+	if (isTrialTrack)
+	{
+		if (TrialTrackRoadtile)
+			TrialTrackRoadtile->NextTile = nextRoadTile;
+
+		nextRoadTile->PreviousTile = TrialTrackRoadtile;
+		TrialTrackRoadtile = nextRoadTile;
+	}	
+	else
+	{
+		if (CurrentRoadTile)
+			CurrentRoadTile->NextTile = nextRoadTile;
+
+		nextRoadTile->PreviousTile = CurrentRoadTile;
+		CurrentRoadTile = nextRoadTile;
+	}
+		
 
 	int chance = rand() % 2;  // CHANCE TO SPAWN CAR ON A TILE
-	if (chance == 0 && (InitialStraight <= 0 || CurrentRoadTile->IsTrialtrack))
-		CurrentRoadTile->SpawnCar(AICarBP);
+	if (chance == 0 && (InitialStraight <= 0 || isTrialTrack))
+		nextRoadTile->SpawnCar(AICarBP);
 }
 
 
 void URoadGenerator::GenerateTrialTrack()
 {
-	TrialTrackFirstRoadTile = nullptr;
+	ARoadTile* firstTrialTrackTile = nullptr;
+
 	NextSpawnPointData = FAttachPointData{
 		TrialTrackStartPoint->GetComponentLocation(),
 		TrialTrackStartPoint->GetComponentQuat().Rotator()
 	};
 	for (int i = 0; i < 7; i++)
 	{
-		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPStraight, true);
-		if (!TrialTrackFirstRoadTile)
-			TrialTrackFirstRoadTile = CurrentRoadTile;
+		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPStraight, true);		
+		if(!firstTrialTrackTile)
+			firstTrialTrackTile = TrialTrackRoadtile;
 	}	
 	for (int i = 0; i < 12; i++)
 	{
@@ -225,34 +237,42 @@ void URoadGenerator::GenerateTrialTrack()
 		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPCornerRight, true);
 	}
 
-	//make it a loop
-	CurrentRoadTile->NextTile = TrialTrackFirstRoadTile;
-	TrialTrackFirstRoadTile->PreviousTile = CurrentRoadTile;
+	TrialTrackRoadtile->NextTile = firstTrialTrackTile;
+	firstTrialTrackTile->PreviousTile = TrialTrackRoadtile;
 }
 
 
 void URoadGenerator::DeleteTrialTrack()
 {
-	while (TrialTrackFirstRoadTile != nullptr && TrialTrackFirstRoadTile->IsTrialtrack)
+	if (!TrialTrackRoadtile)
+		return;
+
+	ARoadTile* firstTile = TrialTrackRoadtile;
+	bool doneFirst = false;
+
+	while (TrialTrackRoadtile != firstTile || !doneFirst)
 	{
-		TrialTrackFirstRoadTile->Destroy();
-		TrialTrackFirstRoadTile->IsTrialtrack = false;
-		TrialTrackFirstRoadTile = TrialTrackFirstRoadTile->NextTile;
+		doneFirst = true;
+		TrialTrackRoadtile->Destroy();
+		TrialTrackRoadtile = TrialTrackRoadtile->NextTile;
+		TrialTrackRoadtile->PreviousTile = nullptr;
 	}
 }
 
 void URoadGenerator::UpdateTrialTrack()
 {
+	if (!TrialTrackRoadtile)
+		return;
+
 	ASpeedGameGameModeBase* gameMode = (ASpeedGameGameModeBase*)GetWorld()->GetAuthGameMode();
-	while (TrialTrackFirstRoadTile != nullptr && TrialTrackFirstRoadTile->IsTrialtrack)
+	ARoadTile* firstTile = TrialTrackRoadtile;
+	bool doneFirst = false;
+
+	while (TrialTrackRoadtile != firstTile || !doneFirst)
 	{
-		TrialTrackFirstRoadTile->IsTrialtrack = false;
-		TrialTrackFirstRoadTile->Init(this, gameMode->TrackColor);
-		TrialTrackFirstRoadTile = TrialTrackFirstRoadTile->NextTile;
-	}
-	while (TrialTrackFirstRoadTile != nullptr && !TrialTrackFirstRoadTile->IsTrialtrack)
-	{
-		TrialTrackFirstRoadTile->IsTrialtrack = true;
-		TrialTrackFirstRoadTile = TrialTrackFirstRoadTile->NextTile;
+		doneFirst = true;
+		TrialTrackRoadtile->Init(this, gameMode->TrackColor);
+		TrialTrackRoadtile = TrialTrackRoadtile->NextTile;
+		TrialTrackRoadtile->PreviousTile = nullptr;
 	}
 }

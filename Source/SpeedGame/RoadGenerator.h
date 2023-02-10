@@ -77,7 +77,10 @@ private:
 	RoadTileType LastRoadTileType = RoadTileType::None;
 
 	FAttachPointData NextSpawnPointData;
+
 	ARoadTile* CurrentRoadTile = nullptr;
+	ARoadTile* TrialTrackRoadtile = nullptr;
+
 	void SpawnNextRoadTile(FRotator& rotatorAdjustment, TSubclassOf<ARoadTile>& roadTileBPToSpawn, bool isTrialTrack = false);
 
 	int InitialStraight = 5;
@@ -88,6 +91,4 @@ private:
 	//AI
 	UPROPERTY(EditDefaultsOnly, Category = "Road Generation | Car")
 	TSubclassOf<class AAIWheeledVehiclePawn> AICarBP;
-
-	ARoadTile* TrialTrackFirstRoadTile = nullptr;
 };

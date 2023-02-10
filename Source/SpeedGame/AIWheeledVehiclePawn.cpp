@@ -41,7 +41,6 @@ void AAIWheeledVehiclePawn::Init(ARoadTile* currentRoadTile, DriveDirection dire
 	CurrentLane = direction == DriveDirection::Forward ? LaneStatus::ForwardRight : LaneStatus::OncomingRight;
 	CurrentDriveDirection = direction;
 	SetCurrentRoadTile(currentRoadTile);
-
 	SpawnComplete = true;
 }
 
@@ -77,8 +76,12 @@ void AAIWheeledVehiclePawn::Tick(float deltaSeconds)
 		return;
 	}
 
-	if (CurrentRoadTile && GetMesh()->GetComponentLocation().Z <= (CurrentRoadTile->GetActorLocation().Z - 300))
+	if (CurrentRoadTile && GetActorLocation().Z <= (CurrentRoadTile->GetActorLocation().Z - 300))
+	{
 		CurrentCarStatus = CarStatus::Dying;
+		UE_LOG(LogTemp, Warning, TEXT("Death by being lower than tile"));
+	}
+
 
 	if (CurrentCarStatus == CarStatus::Dead)
 		return; // this fool done
@@ -274,6 +277,9 @@ bool AAIWheeledVehiclePawn::IsOtherCarOnOtherSideOfTheRoad(AAIWheeledVehiclePawn
 
 void AAIWheeledVehiclePawn::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (!SpawnComplete)
+		return;
+
 	ARoadTile* roadTile = Cast<ARoadTile>(OtherActor);
 	UBoxComponent * trigger = Cast<UBoxComponent>(OtherComp);
 	if (roadTile && trigger)
@@ -291,7 +297,7 @@ void AAIWheeledVehiclePawn::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, 
 		else if (trigger->GetName().Equals(ARoadTile::LeftSideTriggerName.ToString())
 			|| trigger->GetName().Equals(ARoadTile::RightSideTriggerName.ToString()))
 		{
-			CurrentCarStatus = CarStatus::Dying;
+			CurrentCarStatus = CarStatus::Dying; 
 		}
 	}
 }
