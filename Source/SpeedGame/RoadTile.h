@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "AIWheeledVehiclePawn.h"
 #include "RoadTile.generated.h"
 
 UENUM(BlueprintType)
@@ -25,19 +24,19 @@ class SPEEDGAME_API ARoadTile : public AActor
 	
 public:	
 	ARoadTile();
-	virtual void Tick(float DeltaTime) override;
 	
 	bool IsTrialtrack = false;
-
 	void Init(class URoadGenerator* roadGenerator, FLinearColor color);
+	void SpawnCar(TSubclassOf<class AAIWheeledVehiclePawn> aiCarBP);
 
 	FAttachPointData GetAttachPointData();
 	RoadTileType GetRoadTileType();
 	
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SpeedGame | tiles")
 	ARoadTile* NextTile = nullptr;
-	UPROPERTY()
-	ARoadTile* PerviousTile = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SpeedGame | tiles")
+	ARoadTile* PreviousTile = nullptr;
 
 	class UArrowComponent* GetForwardSpawnPoint();
 	class UArrowComponent* GetOncommingSpawnPoint();
@@ -53,6 +52,11 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "SpeedGame | lanes")
 	class USplineComponent* OncommingRightLane;
+
+	static const FName ForwardTriggerName;
+	static const FName OncommingTriggerName;
+	static const FName LeftSideTriggerName;
+	static const FName RightSideTriggerName;
 
 protected:
 	virtual void BeginPlay() override;
@@ -92,7 +96,7 @@ protected:
 	UFUNCTION()
 	void OnOverlapOncomingBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	UFUNCTION()
-	void OnSideTriggerBoxOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void OnOverlapSideBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UPROPERTY(EditAnywhere, Category = "SpeedGame | RoadType")
 	RoadTileType RoadTileType = RoadTileType::None;
@@ -101,8 +105,9 @@ private:
 	class URoadGenerator* RoadGenerator;
 	UMaterialInstanceDynamic* DynamicMaterial_RoadMesh;
 
+	TArray<class AAIWheeledVehiclePawn*> AIVehicilesOnThisRoad;
+
 	void GenerateAndDestroyRoad();
-	void SetCurrentRoadTileForVehicleOrDestroy(class ARoadTile* roadTileToSet, class AAIWheeledVehiclePawn* aiVehicle, LaneStatus LeftLaneStatus,LaneStatus RightLaneStatus);
 };
 
 USTRUCT(Atomic)

@@ -29,9 +29,6 @@ public:
 	URoadGenerator();
 	void AddRoadTile();
 
-	UPROPERTY(EditAnywhere, Category = "Road Generation | Car")
-	bool SpawnOneCarDebug = false;
-
 	UFUNCTION(BlueprintCallable, Category = "Road Generation | Road")
 	void Init();
 
@@ -47,15 +44,13 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere, Category = "Road Generation | Road")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Road Generation | Road")
 	class UArrowComponent* FirstSpawnPoint;
 
-	UPROPERTY(EditAnywhere, Category = "Road Generation | Road")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Road Generation | Road")
 	class UArrowComponent* TrialTrackStartPoint;
 
 private:
-	bool SpawnOneCarDebugCompleted = true;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Road Generation | Road")
 	TSubclassOf<ARoadTile> RoadTileBPStraight;
 
@@ -93,8 +88,6 @@ private:
 	//AI
 	UPROPERTY(EditDefaultsOnly, Category = "Road Generation | Car")
 	TSubclassOf<class AAIWheeledVehiclePawn> AICarBP;
-
-	void SpawnAI();
 
 	ARoadTile* TrialTrackFirstRoadTile = nullptr;
 };

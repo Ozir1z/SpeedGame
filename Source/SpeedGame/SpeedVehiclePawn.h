@@ -65,6 +65,18 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, category = "Mesh | Second SkeletalMesh Asset")
 	class USkeletalMesh* SecondaryMesh;
 
+	UFUNCTION()
+	void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION(BlueprintCallable, Category = "Speedgame")
+	void SwitchCameraStatusTo(CameraStatus newCameraStatus);
+
+	UPROPERTY(BluePrintReadOnly)
+	BombStatus CurrentBombStatus = BombStatus::None;
+
+	UPROPERTY(BlueprintReadOnly)
+	CameraStatus CurrentCameraStatus = CameraStatus::Follow;
+
 #pragma region INPUT
 	// INPUT ACTIONS //
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, category = "Controls|Input Actions")
@@ -104,14 +116,6 @@ protected:
 	void CameraDistance(const FInputActionInstance& ActionInstance);
 
 #pragma endregion
-	UFUNCTION(BlueprintCallable, Category = "Speedgame")
-	void SwitchCameraStatusTo(CameraStatus newCameraStatus);
-
-	UPROPERTY(BluePrintReadOnly)
-	BombStatus CurrentBombStatus = BombStatus::None;
-
-	UPROPERTY(BlueprintReadOnly)
-	CameraStatus CurrentCameraStatus = CameraStatus::Follow;
 
 private:
 	void HandleVehicleSpeed();

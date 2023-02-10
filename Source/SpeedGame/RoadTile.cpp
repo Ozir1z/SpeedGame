@@ -10,6 +10,10 @@
 #include "RoadGenerator.h"
 #include "SpeedGameGameModeBase.h"
 
+const FName ARoadTile::ForwardTriggerName = FName("ForwardTriggerBox");
+const FName ARoadTile::OncommingTriggerName = FName("OncommingTriggerBox");
+const FName ARoadTile::LeftSideTriggerName = FName("LeftSideTriggerBox");
+const FName ARoadTile::RightSideTriggerName = FName("RightSideTriggerBox");
 
 ARoadTile::ARoadTile()
 {
@@ -28,10 +32,10 @@ ARoadTile::ARoadTile()
 	OncommingRightLane = CreateDefaultSubobject<USplineComponent>("OncommingRightLaneSpline");
 
 	// Trigger Boxes
-	ForwardTriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("ForwardTriggerBox"));
-	OncommingTriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("OncommingTriggerBox"));
-	LeftSideTriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftSideTriggerBox"));
-	RightSideTriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("RightSideTriggerBox"));
+	ForwardTriggerBox = CreateDefaultSubobject<UBoxComponent>(ForwardTriggerName);
+	OncommingTriggerBox = CreateDefaultSubobject<UBoxComponent>(OncommingTriggerName);
+	LeftSideTriggerBox = CreateDefaultSubobject<UBoxComponent>(LeftSideTriggerName);
+	RightSideTriggerBox = CreateDefaultSubobject<UBoxComponent>(RightSideTriggerName);
 
 	ForwardTriggerBox->SetCollisionProfileName(TEXT("Trigger"));
 	OncommingTriggerBox->SetCollisionProfileName(TEXT("Trigger"));
@@ -64,6 +68,25 @@ void ARoadTile::Init(URoadGenerator* roadGenerator, FLinearColor color)
 	DynamicMaterial_RoadMesh->SetVectorParameterValue(TEXT("LineColor"), color);
 }
 
+void ARoadTile::SpawnCar(TSubclassOf<class AAIWheeledVehiclePawn> aiCarBP)
+{
+	int forwardOrOncomming = rand() % 2; // 50 % forward 0, oncomming 1
+
+	UArrowComponent* arrowDirection = forwardOrOncomming == 0 ? GetForwardSpawnPoint() : GetOncommingSpawnPoint();
+	AAIWheeledVehiclePawn* aiVehicle = GetWorld()->SpawnActor<AAIWheeledVehiclePawn>(aiCarBP, arrowDirection->GetComponentLocation(), arrowDirection->GetComponentRotation());
+
+	if (aiVehicle == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Spawning AI car failed"));
+		return;
+	}
+
+	DriveDirection direction = forwardOrOncomming == 0 ? DriveDirection::Forward : DriveDirection::Oncomming;
+
+	aiVehicle->Init(this, direction);
+	AIVehicilesOnThisRoad.Add(aiVehicle);
+}
+
 void ARoadTile::BeginPlay()
 {
 	Super::BeginPlay();
@@ -72,21 +95,13 @@ void ARoadTile::BeginPlay()
 
 	ForwardTriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ARoadTile::OnOverlapForwardBegin);
 	OncommingTriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ARoadTile::OnOverlapOncomingBegin);
+	OncommingLeftLane->OnComponentBeginOverlap.AddDynamic(this, &ARoadTile::OnOverlapSideBegin);
+	OncommingRightLane->OnComponentBeginOverlap.AddDynamic(this, &ARoadTile::OnOverlapSideBegin);
 
-	LeftSideTriggerBox->OnComponentEndOverlap.AddDynamic(this, &ARoadTile::OnSideTriggerBoxOverlapEnd);
-	RightSideTriggerBox->OnComponentEndOverlap.AddDynamic(this, &ARoadTile::OnSideTriggerBoxOverlapEnd);
-	
 	Material = RoadMeshComponent->GetMaterial(0);
 	DynamicMaterial_RoadMesh = UMaterialInstanceDynamic::Create(Material, this);
 	RoadMeshComponent->SetMaterial(0, DynamicMaterial_RoadMesh);
 }
-
-
-void ARoadTile::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
-
 
 FAttachPointData ARoadTile::GetAttachPointData()
 {
@@ -97,7 +112,6 @@ RoadTileType ARoadTile::GetRoadTileType()
 {
 	return RoadTileType;
 }
-
 
 UArrowComponent* ARoadTile::GetForwardSpawnPoint()
 {
@@ -111,13 +125,14 @@ UArrowComponent* ARoadTile::GetOncommingSpawnPoint()
 
 void ARoadTile::OnOverlapForwardBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (AAIWheeledVehiclePawn* aiVehicle = Cast<AAIWheeledVehiclePawn>(OtherActor))
+	if (AAIWheeledVehiclePawn* aiCar = Cast<AAIWheeledVehiclePawn>(OtherActor))
 	{
-		if (RoadGenerator && RoadGenerator->SpawnOneCarDebug && !IsTrialtrack)
-			GenerateAndDestroyRoad();
-
-		SetCurrentRoadTileForVehicleOrDestroy(NextTile, aiVehicle, LaneStatus::ForwardLeft, LaneStatus::ForwardRight);
+		if(aiCar->CurrentDriveDirection == DriveDirection::Oncomming)
+			AIVehicilesOnThisRoad.Add(aiCar);
+		else if(aiCar->CurrentDriveDirection == DriveDirection::Forward)
+			AIVehicilesOnThisRoad.Remove(aiCar);
 	}
+
 
 	if (ASpeedVehiclePawn* bus = Cast<ASpeedVehiclePawn>(OtherActor))
 		GenerateAndDestroyRoad();
@@ -125,29 +140,21 @@ void ARoadTile::OnOverlapForwardBegin(UPrimitiveComponent* OverlappedComp, AActo
 
 void ARoadTile::OnOverlapOncomingBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (AAIWheeledVehiclePawn* aiVehicle = Cast<AAIWheeledVehiclePawn>(OtherActor))
-		SetCurrentRoadTileForVehicleOrDestroy(PerviousTile, aiVehicle, LaneStatus::OncomingLeft, LaneStatus::OncomingRight);
-}
-
-void ARoadTile::OnSideTriggerBoxOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	if (AAIWheeledVehiclePawn* aiVehicle = Cast<AAIWheeledVehiclePawn>(OtherActor))
-		aiVehicle->CurrentCarStatus = CarStatus::Dying;
-	if (ASpeedVehiclePawn* bus = Cast<ASpeedVehiclePawn>(OtherActor))
-		bus->HandleVehicleGoingOffroad(IsTrialtrack);
-}
-
-void ARoadTile::SetCurrentRoadTileForVehicleOrDestroy(ARoadTile* roadTileToSet, AAIWheeledVehiclePawn* aiVehicle, LaneStatus LeftLaneStatus, LaneStatus RightLaneStatus)
-{
-	if (!roadTileToSet) //end of the road
+	if (AAIWheeledVehiclePawn* aiCar = Cast<AAIWheeledVehiclePawn>(OtherActor))
 	{
-		aiVehicle->CurrentCarStatus = CarStatus::Dying;
-		aiVehicle->SetCurrentRoad(nullptr);
-		return;
+		if (aiCar->CurrentDriveDirection == DriveDirection::Forward)
+			AIVehicilesOnThisRoad.Add(aiCar);
+		else if (aiCar->CurrentDriveDirection == DriveDirection::Oncomming)
+			AIVehicilesOnThisRoad.Remove(aiCar);
 	}
+}
 
-	if (aiVehicle->CurrentLane == LeftLaneStatus || aiVehicle->CurrentLane == RightLaneStatus)
-		aiVehicle->SetCurrentRoad(roadTileToSet);
+void ARoadTile::OnOverlapSideBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (AAIWheeledVehiclePawn* aiCar = Cast<AAIWheeledVehiclePawn>(OtherActor))
+	{
+		AIVehicilesOnThisRoad.Add(aiCar);
+	}
 }
 
 
@@ -162,6 +169,11 @@ void ARoadTile::GenerateAndDestroyRoad()
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]()
 		{
+			for (int i = 0; i < AIVehicilesOnThisRoad.Num(); i++)
+			{
+				if(AIVehicilesOnThisRoad[i] || AIVehicilesOnThisRoad[i]->CurrentCarStatus != CarStatus::Dead)
+					AIVehicilesOnThisRoad[i]->CurrentCarStatus = CarStatus::Dying;
+			}
 			Destroy();
 		}, 20, false);
 }

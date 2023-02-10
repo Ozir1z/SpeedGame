@@ -13,33 +13,71 @@
 
 AAIWheeledVehiclePawn::AAIWheeledVehiclePawn() 
 {
+	PrimaryActorTick.bCanEverTick = true;
 	LeftPoint = CreateDefaultSubobject<USceneComponent>(TEXT("LeftPoint"));
 	RightPoint = CreateDefaultSubobject<USceneComponent>(TEXT("RightPoint"));
 
 	LeftPoint->SetupAttachment(RootComponent);
 	RightPoint->SetupAttachment(RootComponent);
+
 }
 
 void AAIWheeledVehiclePawn::BeginPlay()
 {
 	Super::BeginPlay();
-	StartingLocation = GetActorLocation();
+	if (!GetMesh())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No Mesh attached to AI car"));
+		return;
+	}
+
+	StartingLocation = GetMesh()->GetComponentLocation();
+	GetMesh()->OnComponentBeginOverlap.AddDynamic(this, &AAIWheeledVehiclePawn::OnOverlapBegin);
 	GetRandomCarTypeAndSetSpeed();
 }
+
+void AAIWheeledVehiclePawn::Init(ARoadTile* currentRoadTile, DriveDirection direction)
+{
+	CurrentLane = direction == DriveDirection::Forward ? LaneStatus::ForwardRight : LaneStatus::OncomingRight;
+	CurrentDriveDirection = direction;
+	SetCurrentRoadTile(currentRoadTile);
+
+	SpawnComplete = true;
+}
+
+void AAIWheeledVehiclePawn::GetRandomCarTypeAndSetSpeed()
+{
+	float random = rand() % VariableMaxSpeeds.Num();
+	float insaneCarChance = rand() % 9;
+
+	if (insaneCarChance == 0)
+	{
+		CurrentCarType = CarType::Insane;
+		MaxSpeed = 75.f;
+	}
+	else {
+		CurrentCarType = CarType(random);
+		MaxSpeed = VariableMaxSpeeds[random];
+	}
+
+	AAIWheeledVehiclePawn::ChangeColor();
+}
+
 
 void AAIWheeledVehiclePawn::Tick(float deltaSeconds)
 {
 	Super::Tick(deltaSeconds);
+	if (!SpawnComplete)
+		return;
 
 	if (IsParkedCar)
 	{
-		if(GetActorLocation().Z <= (StartingLocation.Z - 300))
+		if(GetMesh()->GetComponentLocation().Z <= (StartingLocation.Z - 300))
 			HandleVehicleGoingOffroad(deltaSeconds);
 		return;
 	}
-	
 
-	if (CurrentRoadTile && GetActorLocation().Z <= (CurrentRoadTile->GetActorLocation().Z - 300))
+	if (CurrentRoadTile && GetMesh()->GetComponentLocation().Z <= (CurrentRoadTile->GetActorLocation().Z - 300))
 		CurrentCarStatus = CarStatus::Dying;
 
 	if (CurrentCarStatus == CarStatus::Dead)
@@ -49,7 +87,7 @@ void AAIWheeledVehiclePawn::Tick(float deltaSeconds)
 	if (CurrentRoadTile == nullptr || CurrentCarStatus == CarStatus::Dying)
 	{
 		HandleVehicleGoingOffroad(deltaSeconds);
-		return; // we dont wanna do shit if there is no current road tile
+		return; // we dont wanna do shit if there is no current road tile or if we are dying
 	}
 
 	SlowdownBehindVehicleAndChangeLane(deltaSeconds);
@@ -63,37 +101,31 @@ void AAIWheeledVehiclePawn::HandleVehicleGoingOffroad(float deltaSeconds)
 	{
 		StartedDying = true;
 		GetMesh()->SetEnableGravity(false);
-		SetCurrentRoad(nullptr);
+		SetCurrentRoadTile(nullptr);
 	}
 
 	if (CurrenDeathTimer < DeathTimer)
 		return;
 
 	CurrentCarStatus = CarStatus::Dead;
-	GetMesh()->SetEnableGravity(false);
-	SetCurrentRoad(nullptr);
 
 	if (DeathParticle)
 		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DeathParticle, GetActorLocation(), GetActorRotation(), FVector(5.0f));
 	Destroy();
 }
 
-void AAIWheeledVehiclePawn::SetCurrentRoad(ARoadTile* currentRoadTile)
-{
-	CurrentRoadTile = currentRoadTile;
-	TargetSplineDistance = 0.f;
-}
-
 void AAIWheeledVehiclePawn::DriveInLane(float deltaSeconds)
 {
+	if (!GetCurrentaneSpline())
+		return;
+
 	float throttleInput = GetVehicleMovement()->GetForwardSpeedMPH() <= MaxSpeed ? 1 : 0;
 	GetVehicleMovement()->SetThrottleInput(throttleInput);
 
 	FVector targetPoint = GetCurrentaneSpline()->GetLocationAtDistanceAlongSpline(TargetSplineDistance, ESplineCoordinateSpace::World);
-	if (targetPoint.IsZero())
-		return;
 
-	double distance = FVector::Dist(targetPoint, GetActorLocation());
+
+	double distance = FVector::Dist(targetPoint, GetMesh()->GetComponentLocation());
 
 	if (distance < CheckGap)
 		TargetSplineDistance += CheckGap;
@@ -124,62 +156,47 @@ void AAIWheeledVehiclePawn::DriveInLane(float deltaSeconds)
 
 void AAIWheeledVehiclePawn::SlowdownBehindVehicleAndChangeLane(float deltaSeconds)
 {
-	//refactor, this shit its terrifying
+	float breakAmount;
 	FVector start = GetActorLocation();
 	FVector forward = GetActorForwardVector();
 	start = FVector(start.X + (forward.X * 50), start.Y, start.Z);
 
-	FVector endNormalBrake = start + (forward * 1500); // range of raycast
-	FVector endHandBrake = start + (forward * 3000); // range of raycast
-	FHitResult hitNormalBrake;
-
-	FHitResult hitHandBrake;
 	FCollisionQueryParams CollisionParameters;
 	CollisionParameters.AddIgnoredActor(this);
 
-	bool actorHitNormalBrake = GetWorld()->LineTraceSingleByChannel(hitNormalBrake, start, endNormalBrake, ECC_Pawn, CollisionParameters, FCollisionResponseParams());
-	//DrawDebugLine(GetWorld(), start, endNormalBrake, FColor::Green, false, 0.1f, 0.f, 10.f);
-	
+	// handle handbrake
+	FVector endHandBrake = start + (forward * 1500); // range of raycast
+	FHitResult hitHandBrake;
 	bool actorHitHandBrake = GetWorld()->LineTraceSingleByChannel(hitHandBrake, start, endHandBrake, ECC_Pawn, CollisionParameters, FCollisionResponseParams());
-	//DrawDebugLine(GetWorld(), start, endHandBrake, FColor::Red, false, 0.1f, 0.f, 10.f);
-	float breakAmount;
 
 	if (actorHitHandBrake && hitHandBrake.GetActor())
 	{
-		AAIWheeledVehiclePawn* aiCar = Cast<AAIWheeledVehiclePawn>(hitHandBrake.GetActor());
-		if (aiCar)
+		if (AWheeledVehiclePawn* vehicle = Cast<AWheeledVehiclePawn>(hitHandBrake.GetActor()))
 		{
-			if (IsOtherCarOnOtherSideOfTheRoad(aiCar))
-				return;
+			GetVehicleMovement()->SetHandbrakeInput(true);
+			breakAmount = 1.f;
 		}
 
-		AWheeledVehiclePawn* vehicle = Cast<AWheeledVehiclePawn>(hitHandBrake.GetActor());
-		if (vehicle)
-		{
-			if (vehicle->GetVehicleMovement()->GetForwardSpeedMPH() <= 20)
-			{
-				GetVehicleMovement()->SetHandbrakeInput(true);
-				breakAmount = 1.f;
-				SwitchLane(); 
-			}
-		}
+		AAIWheeledVehiclePawn* aiCar = Cast<AAIWheeledVehiclePawn>(hitHandBrake.GetActor());
+		if (aiCar && !IsOtherCarOnOtherSideOfTheRoad(aiCar))
+			SwitchLane();
 	}
-	else GetVehicleMovement()->SetHandbrakeInput(false);
+	else 
+		GetVehicleMovement()->SetHandbrakeInput(false);
+
+	// handle handbrake
+	FVector endNormalBrake = start + (forward * 3000); // range of raycast
+	FHitResult hitNormalBrake;
+	bool actorHitNormalBrake = GetWorld()->LineTraceSingleByChannel(hitNormalBrake, start, endNormalBrake, ECC_Pawn, CollisionParameters, FCollisionResponseParams());
 
 	if (actorHitNormalBrake && hitNormalBrake.GetActor())
 	{
 		AAIWheeledVehiclePawn* aiCar = Cast<AAIWheeledVehiclePawn>(hitNormalBrake.GetActor());
-		if (aiCar)
-		{
-			if (IsOtherCarOnOtherSideOfTheRoad(aiCar))
-				return;
-
+		if (aiCar && !IsOtherCarOnOtherSideOfTheRoad(aiCar))
 			SwitchLane();
-		}
 
-		AWheeledVehiclePawn* vehicle = Cast<AWheeledVehiclePawn>(hitNormalBrake.GetActor());
-		
-		if (vehicle) breakAmount = .5f;
+		if (AWheeledVehiclePawn* vehicle = Cast<AWheeledVehiclePawn>(hitNormalBrake.GetActor())) 
+			breakAmount = .5f;
 	}
 	else breakAmount = 0.f;
 
@@ -214,13 +231,13 @@ void AAIWheeledVehiclePawn::SwitchLane()
 		CurrentRoadTile->GetRoadTileType() == RoadTileType::CornerRight ||
 		CurrentRoadTile->GetRoadTileType() == RoadTileType::CornerLeft ||
 		GetVehicleMovement()->GetForwardSpeedMPH() <= 10)
-		return; // dont switch if on CD or in a corner
+		return; // dont switch if on CD or in a turn
 
 	HasrecentlySwitchedLanes = true;	
 	SteerAmount = 0.1f;
 
 	FTimerHandle TimerHandle;
-	float randomTimeToSwitch = rand() % 20 + 10;
+	float randomTimeToSwitch = rand() % 20 + 10; // between 10-20 seconds
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]()
 		{
 			HasrecentlySwitchedLanes = false;
@@ -255,20 +272,37 @@ bool AAIWheeledVehiclePawn::IsOtherCarOnOtherSideOfTheRoad(AAIWheeledVehiclePawn
 		return false;
 }
 
-void AAIWheeledVehiclePawn::GetRandomCarTypeAndSetSpeed()
+void AAIWheeledVehiclePawn::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	float random = rand() % VariableMaxSpeeds.Num();
-	float insaneCarChance = rand() % 9;
-	
-	if (insaneCarChance == 0)
+	ARoadTile* roadTile = Cast<ARoadTile>(OtherActor);
+	UBoxComponent * trigger = Cast<UBoxComponent>(OtherComp);
+	if (roadTile && trigger)
 	{
-		CurrentCarType = CarType::Insane;
-		MaxSpeed = 75.f;
+		if (trigger->GetName().Equals(ARoadTile::ForwardTriggerName.ToString())
+			&& CurrentDriveDirection == DriveDirection::Forward)
+		{
+			SetCurrentRoadTile(roadTile->NextTile);
+		}
+		else if (trigger->GetName().Equals(ARoadTile::OncommingTriggerName.ToString())
+			&& CurrentDriveDirection == DriveDirection::Oncomming)
+		{
+			SetCurrentRoadTile(roadTile->PreviousTile);
+		}
+		else if (trigger->GetName().Equals(ARoadTile::LeftSideTriggerName.ToString())
+			|| trigger->GetName().Equals(ARoadTile::RightSideTriggerName.ToString()))
+		{
+			CurrentCarStatus = CarStatus::Dying;
+		}
 	}
-	else {
-		CurrentCarType = CarType(random);
-		MaxSpeed = VariableMaxSpeeds[random];
+}
+
+void AAIWheeledVehiclePawn::SetCurrentRoadTile(ARoadTile* roadTile)
+{
+	if (roadTile)
+		CurrentRoadTile = roadTile;
+	else
+	{
+		CurrentRoadTile = nullptr;
+		CurrentCarStatus = CarStatus::Dying;
 	}
-	
-	AAIWheeledVehiclePawn::ChangeColor();
 }

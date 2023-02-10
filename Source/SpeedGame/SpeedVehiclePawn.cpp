@@ -8,9 +8,11 @@
 #include <EnhancedInputComponent.h>
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "Components/BoxComponent.h"
 #include <Kismet/KismetMathLibrary.h>
 #include "SpeedGameGameModeBase.h"
 #include <Kismet/KismetStringLibrary.h>
+#include "RoadTile.h"
 
 ASpeedVehiclePawn::ASpeedVehiclePawn()
 {
@@ -30,7 +32,6 @@ ASpeedVehiclePawn::ASpeedVehiclePawn()
 	CameraArmComp->bUsePawnControlRotation = false;
 
 }
-
 
 void ASpeedVehiclePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -72,8 +73,17 @@ void ASpeedVehiclePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 void ASpeedVehiclePawn::BeginPlay()
 {
 	Super::BeginPlay();
-	PlayerStartLocation = GetActorLocation();
-	PlayerStartRotation = GetActorRotation();
+
+	if(!GetMesh())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No Mesh attached to Player bus"));
+		return;
+	}
+
+	PlayerStartLocation = GetMesh()->GetComponentLocation();
+	PlayerStartRotation = GetMesh()->GetComponentRotation();
+	GetMesh()->OnComponentBeginOverlap.AddDynamic(this, &ASpeedVehiclePawn::OnOverlapBegin);
+
 }
 
 void ASpeedVehiclePawn::Init()
@@ -106,7 +116,8 @@ void ASpeedVehiclePawn::Tick(float DeltaTime)
 		GetMesh()->SetSkeletalMeshAsset(SecondaryMesh);
 		GetMesh()->SetSkeletalMeshAsset(originalMesh);
 		GetMesh()->SetWorldLocationAndRotation(PlayerStartLocation, PlayerStartRotation, false, nullptr, ETeleportType::TeleportPhysics);
-		return;
+		CameraArmComp->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		return; // we fell off before the game started xD
 	}
 
 	HandleVehicleSpeed();
@@ -258,4 +269,16 @@ void ASpeedVehiclePawn::CameraDistance(const FInputActionInstance& ActionInstanc
 	else
 		CameraArmComp->TargetArmLength += 500.f;
 			
+}
+
+void ASpeedVehiclePawn::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	ARoadTile* roadTile = Cast<ARoadTile>(OtherActor);
+	UBoxComponent* trigger = Cast<UBoxComponent>(OtherComp);
+	if (roadTile && trigger)
+	{
+		if(trigger->GetName().Equals(ARoadTile::LeftSideTriggerName.ToString())
+			|| trigger->GetName().Equals(ARoadTile::RightSideTriggerName.ToString()))
+		HandleVehicleGoingOffroad(roadTile->IsTrialtrack);
+	}
 }

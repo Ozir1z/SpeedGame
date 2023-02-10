@@ -28,9 +28,6 @@ void URoadGenerator::BeginPlay()
 	FirstSpawnPoint->SetRelativeLocation(FVector(3000, 0, 0));
 	TrialTrackStartPoint->SetRelativeLocationAndRotation(FVector(0, 3000, 0), FRotator(0,90,0));
 
-	if (SpawnOneCarDebug)
-		SpawnOneCarDebugCompleted = false;
-
 	RoadTilesTopCollection.Add(RoadTileBPSlopeTop);
 	RoadTilesTopCollection.Add(RoadTileBPStraight);
 
@@ -41,8 +38,6 @@ void URoadGenerator::BeginPlay()
 	RoadTilesStraightCollection.Add(RoadTileBPStraight);
 	RoadTilesStraightCollection.Add(RoadTileBPCornerLeft);
 	RoadTilesStraightCollection.Add(RoadTileBPCornerRight);
-
-
 }
 
 void URoadGenerator::Init()
@@ -161,44 +156,16 @@ void URoadGenerator::SpawnNextRoadTile(FRotator& rotatorAdjustment, TSubclassOf<
 	if (CurrentRoadTile)
 		CurrentRoadTile->NextTile = nextRoadTile;
 
-	nextRoadTile->PerviousTile = CurrentRoadTile;
+	nextRoadTile->PreviousTile = CurrentRoadTile;
 
 	LastRoadTileType = nextRoadTile->GetRoadTileType();
 	NextSpawnPointData = nextRoadTile->GetAttachPointData();
 
 	CurrentRoadTile = nextRoadTile;
 
-	if ((SpawnOneCarDebug && !SpawnOneCarDebugCompleted))
-	{
-		SpawnOneCarDebugCompleted = true;
-		SpawnAI();
-	}
-	else if(!SpawnOneCarDebug && (InitialStraight <= 0 || CurrentRoadTile->IsTrialtrack))
-	{
-		int chance = rand() % 2;  // CHANCE TO SPAWN CAR ON A TILE
-		if(chance == 0)
-			SpawnAI();
-	}
-}
-
-void URoadGenerator::SpawnAI()
-{
-	int forwardOrOncomming = rand() % 2; // 50 % forward 0, oncomming 1
-
-	UArrowComponent* arrowDirection = forwardOrOncomming == 0 ? CurrentRoadTile->GetForwardSpawnPoint() : CurrentRoadTile->GetOncommingSpawnPoint();
-	AAIWheeledVehiclePawn* aiVehicle = GetWorld()->SpawnActor<AAIWheeledVehiclePawn>(AICarBP, arrowDirection->GetComponentLocation(), arrowDirection->GetComponentRotation());
-	
-	if (aiVehicle == nullptr)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Spawning AI car failed"));
-		return;
-	}
-
-	aiVehicle->CurrentLane = forwardOrOncomming == 0 ? LaneStatus::ForwardRight : LaneStatus::OncomingRight;
-	aiVehicle->SetCurrentRoad(CurrentRoadTile); // FIX THIS
-	
-	if (SpawnOneCarDebug)
-		GetWorld()->GetFirstPlayerController()->Possess(aiVehicle);
+	int chance = rand() % 2;  // CHANCE TO SPAWN CAR ON A TILE
+	if (chance == 0 && (InitialStraight <= 0 || CurrentRoadTile->IsTrialtrack))
+		CurrentRoadTile->SpawnCar(AICarBP);
 }
 
 
@@ -260,7 +227,7 @@ void URoadGenerator::GenerateTrialTrack()
 
 	//make it a loop
 	CurrentRoadTile->NextTile = TrialTrackFirstRoadTile;
-	TrialTrackFirstRoadTile->PerviousTile = CurrentRoadTile;
+	TrialTrackFirstRoadTile->PreviousTile = CurrentRoadTile;
 }
 
 

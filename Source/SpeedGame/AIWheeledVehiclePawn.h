@@ -7,12 +7,19 @@
 #include "AIWheeledVehiclePawn.generated.h"
 
 UENUM()
-enum class LaneStatus : uint8
+enum class LaneStatus
 {
 	ForwardRight UMETA(DisplayName = "ForwardRight"),
 	ForwardLeft UMETA(DisplayName = "ForwardLeft"),
 	OncomingRight UMETA(DisplayName = "OncomingRight"),
 	OncomingLeft UMETA(DisplayName = "OncomingLeft")
+};
+
+UENUM()
+enum class DriveDirection
+{
+	Forward UMETA(DisplayName = "Forward"),
+	Oncomming UMETA(DisplayName = "Oncomming")
 };
 
 UENUM(BlueprintType)
@@ -42,17 +49,16 @@ class SPEEDGAME_API AAIWheeledVehiclePawn : public AWheeledVehiclePawn
 	AAIWheeledVehiclePawn();
 
 public:
+
+	void Init(class ARoadTile* currentRoadTile, DriveDirection direction);
+
 	UPROPERTY(EditAnywhere)
 	class USceneComponent* LeftPoint;
 
 	UPROPERTY(EditAnywhere)
 	class USceneComponent* RightPoint;
 
-	void SetCurrentRoad(class ARoadTile* CurrentRoadTile);
-
-	LaneStatus CurrentLane;
-
-	UPROPERTY(BluePrintReadOnly)
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly)
 	CarStatus CurrentCarStatus = CarStatus::Alive;
 
 	UPROPERTY(BlueprintReadOnly, Category = "SpeedGame | Car")
@@ -61,18 +67,26 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "SpeedGame | Car")
 	float MaxSpeed = 50.f;
 
+	DriveDirection CurrentDriveDirection;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float deltaSeconds) override;
+
+	void DriveInLane(float deltaSeconds);
+	void SlowdownBehindVehicleAndChangeLane(float deltaSeconds);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "SpeedGame | Car")
+	void ChangeColor();
+
+	UFUNCTION()
+	void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SpeedGame | Car")
 	bool IsParkedCar = false;
 
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* DeathParticle;
-
-	void DriveInLane(float deltaSeconds);
-	void SlowdownBehindVehicleAndChangeLane(float deltaSeconds);
 
 	float TargetSplineDistance = 0.f;
 	float CheckGap = 400.f;
@@ -84,19 +98,20 @@ protected:
 
 	class ARoadTile* CurrentRoadTile = nullptr;
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "SpeedGame | Car")
-	void ChangeColor();
-
 private:
 	class USplineComponent* GetCurrentaneSpline();
-	
+
+	LaneStatus CurrentLane;
 	FVector StartingLocation;
+
 	bool HasrecentlySwitchedLanes = false;
 	bool StartedDying = false;
+	bool SpawnComplete = false;
 	float DeathTimer = rand() % 7 + 5;
 	float CurrenDeathTimer = 0;
-
+	
 	void SwitchLane();
+	void SetCurrentRoadTile(class ARoadTile* currentRoadTile);
 	bool IsOtherCarOnOtherSideOfTheRoad(class AAIWheeledVehiclePawn* aiCar);
 
 	void GetRandomCarTypeAndSetSpeed();
