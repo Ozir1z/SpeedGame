@@ -77,10 +77,7 @@ void AAIWheeledVehiclePawn::Tick(float deltaSeconds)
 	}
 
 	if (CurrentRoadTile && GetActorLocation().Z <= (CurrentRoadTile->GetActorLocation().Z - 300))
-	{
 		CurrentCarStatus = CarStatus::Dying;
-		UE_LOG(LogTemp, Warning, TEXT("Death by being lower than tile"));
-	}
 
 
 	if (CurrentCarStatus == CarStatus::Dead)
