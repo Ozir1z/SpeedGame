@@ -257,6 +257,7 @@ void URoadGenerator::DeleteTrialTrack()
 		TrialTrackRoadtile = TrialTrackRoadtile->NextTile;
 		TrialTrackRoadtile->PreviousTile = nullptr;
 	}
+	TrialTrackRoadtile = nullptr;
 }
 
 void URoadGenerator::UpdateTrialTrack()
@@ -273,6 +274,6 @@ void URoadGenerator::UpdateTrialTrack()
 		doneFirst = true;
 		TrialTrackRoadtile->Init(this, gameMode->TrackColor);
 		TrialTrackRoadtile = TrialTrackRoadtile->NextTile;
-		TrialTrackRoadtile->PreviousTile = nullptr;
 	}
+	TrialTrackRoadtile = firstTile;
 }
