@@ -17,8 +17,6 @@ void ASpeedGameGameModeBase::BeginPlay()
 
 	USpeedGameInstance* gameInstance = Cast<USpeedGameInstance>(GetWorld()->GetGameInstance());
 	gameInstance->LoadGame();
-
-	ChangeMenuWidget(StartingWidgetClass);
 }
 
 void ASpeedGameGameModeBase::Tick(float DeltaTime)
@@ -27,7 +25,7 @@ void ASpeedGameGameModeBase::Tick(float DeltaTime)
 	UpdateTimer(DeltaTime);
 }
 
-void ASpeedGameGameModeBase::ChangeMenuWidget(TSubclassOf<UUserWidget> NewWidgetClass)
+void ASpeedGameGameModeBase::ChangeMenuWidget(UUserWidget* NewWidgetClass)
 {
 	if (CurrentWidget != nullptr)
 	{
@@ -36,7 +34,8 @@ void ASpeedGameGameModeBase::ChangeMenuWidget(TSubclassOf<UUserWidget> NewWidget
 	}
 	if (NewWidgetClass != nullptr)
 	{
-		CurrentWidget = CreateWidget<UUserWidget>(GetWorld(), NewWidgetClass);
+		//CurrentWidget = CreateWidget<UUserWidget>(GetWorld(), NewWidgetClass);
+		CurrentWidget = NewWidgetClass;
 		if (CurrentWidget != nullptr)
 		{
 			CurrentWidget->AddToViewport();

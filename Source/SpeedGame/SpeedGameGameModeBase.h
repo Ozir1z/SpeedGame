@@ -17,7 +17,7 @@ class SPEEDGAME_API ASpeedGameGameModeBase : public AGameModeBase
 	ASpeedGameGameModeBase();
 public:
 	UFUNCTION(BlueprintCallable, Category = "Speedgame | UMG")
-	void ChangeMenuWidget(TSubclassOf<UUserWidget> NewWidgetClass);
+	void ChangeMenuWidget(UUserWidget* NewWidgetClass);
 
 	void UpdateSpeed(int speed);
 	void UpdateTimer(float deltaSeconds);
@@ -31,9 +31,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Speedgame | UMG")
-	TSubclassOf<UUserWidget> StartingWidgetClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Speedgame | UMG")
 	UUserWidget* CurrentWidget;
