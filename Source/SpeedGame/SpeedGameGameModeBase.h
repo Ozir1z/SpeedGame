@@ -25,9 +25,6 @@ public:
 	void StopGame();
 	void StartGame();
 
-	UPROPERTY(EditAnywhere, BluePrintReadWrite, Category = "Road Generation | Road")
-	FLinearColor TrackColor;
-
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;

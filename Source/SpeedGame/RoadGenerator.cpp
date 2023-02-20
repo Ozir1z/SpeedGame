@@ -5,6 +5,7 @@
 #include "AIWheeledVehiclePawn.h"
 #include "Components/ArrowComponent.h"
 #include "SpeedGameGameModeBase.h"
+#include "SpeedGameUserSettings.h"
 
 URoadGenerator::URoadGenerator()
 {
@@ -146,12 +147,12 @@ void URoadGenerator::AddRoadTile()
 void URoadGenerator::SpawnNextRoadTile(FRotator& rotatorAdjustment, TSubclassOf<ARoadTile>& roadTileBPToSpawn, bool isTrialTrack)
 {
 	ARoadTile* nextRoadTile = GetWorld()->SpawnActor<ARoadTile>(roadTileBPToSpawn, NextSpawnPointData.Location, rotatorAdjustment);
-	
-	ASpeedGameGameModeBase* gameMode = (ASpeedGameGameModeBase*)GetWorld()->GetAuthGameMode();
-	if (!gameMode)
+
+	USpeedGameUserSettings* settings = USpeedGameUserSettings::GetSpeedGameUserSettings();
+	if (!settings)
 		return;
 
-	nextRoadTile->Init(this, gameMode->TrackColor);
+	nextRoadTile->Init(this, settings->GetRoadColor());
 	nextRoadTile->IsTrialtrack = isTrialTrack;
 	LastRoadTileType = nextRoadTile->GetRoadTileType();
 	NextSpawnPointData = nextRoadTile->GetAttachPointData();
@@ -260,19 +261,18 @@ void URoadGenerator::DeleteTrialTrack()
 	TrialTrackRoadtile = nullptr;
 }
 
-void URoadGenerator::UpdateTrialTrack()
+void URoadGenerator::UpdateTrialTrack(FLinearColor newColor)
 {
 	if (!TrialTrackRoadtile)
 		return;
 
-	ASpeedGameGameModeBase* gameMode = (ASpeedGameGameModeBase*)GetWorld()->GetAuthGameMode();
 	ARoadTile* firstTile = TrialTrackRoadtile;
 	bool doneFirst = false;
 
 	while (TrialTrackRoadtile != firstTile || !doneFirst)
 	{
 		doneFirst = true;
-		TrialTrackRoadtile->Init(this, gameMode->TrackColor);
+		TrialTrackRoadtile->Init(this, newColor);
 		TrialTrackRoadtile = TrialTrackRoadtile->NextTile;
 	}
 	TrialTrackRoadtile = firstTile;

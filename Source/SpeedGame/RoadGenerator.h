@@ -39,7 +39,7 @@ public:
 	void GenerateTrialTrack();
 
 	UFUNCTION(BlueprintCallable, Category = "Road Generation | Road")
-	void UpdateTrialTrack();
+	void UpdateTrialTrack(FLinearColor newColor);
 
 protected:
 	virtual void BeginPlay() override;
