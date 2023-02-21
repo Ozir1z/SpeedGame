@@ -84,7 +84,6 @@ void ARoadTile::SpawnCar(TSubclassOf<class AAIWheeledVehiclePawn> aiCarBP)
 	DriveDirection direction = forwardOrOncomming == 0 ? DriveDirection::Forward : DriveDirection::Oncomming;
 
 	aiVehicle->Init(this, direction);
-	AIVehicilesOnThisRoad.Add(aiVehicle);
 }
 
 void ARoadTile::BeginPlay()
