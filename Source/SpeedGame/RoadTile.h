@@ -103,8 +103,6 @@ private:
 	class URoadGenerator* RoadGenerator;
 	UMaterialInstanceDynamic* DynamicMaterial_RoadMesh;
 
-	TArray<class AAIWheeledVehiclePawn*> AIVehicilesOnThisRoad;
-
 	void GenerateAndDestroyRoad();
 
 	float DestroyTimer = 20;
