@@ -7,17 +7,17 @@ USpeedSaveGame::USpeedSaveGame()
 {
 	if (HighScores.IsEmpty())
 	{
-		HighScores.Add(FHighScoreData(TEXT("xxUltImAtEbUssErxx"), 86400.f));
-		HighScores.Add(FHighScoreData(TEXT("YoMaMa"), 36000.f));
-		HighScores.Add(FHighScoreData(TEXT("HellBOI"), 18000.f));
-		HighScores.Add(FHighScoreData(TEXT("SusAF"), 3600.f));
+		HighScores.Add(FHighScoreData(TEXT("keanu_woofs"), 10800.f));
+		HighScores.Add(FHighScoreData(TEXT("turtlesarecool"), 9000.f));
+		HighScores.Add(FHighScoreData(TEXT("GAYMERGOD666"), 7200.f));
+		HighScores.Add(FHighScoreData(TEXT("tryHARD"), 3600.f));
 		HighScores.Add(FHighScoreData(TEXT("Bilbeau"), 1800.f));
 
-		HighScores.Add(FHighScoreData(TEXT("SLAYERr"), 900.f));
-		HighScores.Add(FHighScoreData(TEXT("Bald"), 600.f));
-		HighScores.Add(FHighScoreData(TEXT("FranK"), 300.f));
+		HighScores.Add(FHighScoreData(TEXT("frogsarealsocool"), 600.f));
+		HighScores.Add(FHighScoreData(TEXT("BALD_MAN"), 300.f));
+		HighScores.Add(FHighScoreData(TEXT("xxUltImAtEGaMeRxx"), 120.f));
 		HighScores.Add(FHighScoreData(TEXT("TTV_SweatyG4mer"), 60.f));
-		HighScores.Add(FHighScoreData(TEXT("thisG4meSux"), 30.f));
+		HighScores.Add(FHighScoreData(TEXT("thisgamesux"), 30.f));
 	}
 }
 

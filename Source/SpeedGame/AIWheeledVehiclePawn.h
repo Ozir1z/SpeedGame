@@ -72,6 +72,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float deltaSeconds) override;
 
 	void DriveInLane(float deltaSeconds);
@@ -104,6 +105,7 @@ private:
 
 	LaneStatus CurrentLane;
 	FVector StartingLocation;
+	FTimerHandle SwitchLaneTimerHandle;
 
 	bool HasrecentlySwitchedLanes = false;
 	bool StartedDying = false;

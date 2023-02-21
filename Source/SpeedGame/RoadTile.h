@@ -60,6 +60,8 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float deltaSeconds) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UPROPERTY(VisibleAnywhere, Category = "SpeedGame | Material")
 	UMaterialInterface* Material;
@@ -93,10 +95,6 @@ protected:
 
 	UFUNCTION()
 	void OnOverlapForwardBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	UFUNCTION()
-	void OnOverlapOncommingBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	UFUNCTION()
-	void OnOverlapSideBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UPROPERTY(EditAnywhere, Category = "SpeedGame | RoadType")
 	RoadTileType RoadTileType = RoadTileType::None;
@@ -108,6 +106,9 @@ private:
 	TArray<class AAIWheeledVehiclePawn*> AIVehicilesOnThisRoad;
 
 	void GenerateAndDestroyRoad();
+
+	float DestroyTimer = 20;
+	bool TimetoDestroy = false;
 };
 
 USTRUCT(Atomic)

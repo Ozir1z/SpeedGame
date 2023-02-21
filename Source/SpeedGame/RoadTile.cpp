@@ -94,13 +94,31 @@ void ARoadTile::BeginPlay()
 		UE_LOG(LogTemp, Display, TEXT("RoadTyleType is not set in RoadTile blueprint"));
 
 	ForwardTriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ARoadTile::OnOverlapForwardBegin);
-	OncommingTriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ARoadTile::OnOverlapOncommingBegin);
-	OncommingLeftLane->OnComponentBeginOverlap.AddDynamic(this, &ARoadTile::OnOverlapSideBegin);
-	OncommingRightLane->OnComponentBeginOverlap.AddDynamic(this, &ARoadTile::OnOverlapSideBegin);
 
 	Material = RoadMeshComponent->GetMaterial(0);
 	DynamicMaterial_RoadMesh = UMaterialInstanceDynamic::Create(Material, this);
 	RoadMeshComponent->SetMaterial(0, DynamicMaterial_RoadMesh);
+}
+
+void ARoadTile::Tick(float deltaSeconds)
+{
+	Super::Tick(deltaSeconds);
+
+	if (TimetoDestroy)
+		DestroyTimer -= deltaSeconds;
+
+	if (DestroyTimer <= 0 && TimetoDestroy)
+	{
+		TimetoDestroy = false; // only destroy once
+		Destroy();
+	}
+}
+
+void ARoadTile::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
 FAttachPointData ARoadTile::GetAttachPointData()
@@ -125,37 +143,10 @@ UArrowComponent* ARoadTile::GetOncommingSpawnPoint()
 
 void ARoadTile::OnOverlapForwardBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (AAIWheeledVehiclePawn* aiCar = Cast<AAIWheeledVehiclePawn>(OtherActor))
-	{
-		if(aiCar->CurrentDriveDirection == DriveDirection::Oncomming)
-			AIVehicilesOnThisRoad.Add(aiCar);
-		else if(aiCar->CurrentDriveDirection == DriveDirection::Forward)
-			AIVehicilesOnThisRoad.Remove(aiCar);
-	}
-
-
 	if (ASpeedVehiclePawn* bus = Cast<ASpeedVehiclePawn>(OtherActor))
 		GenerateAndDestroyRoad();
 }
 
-void ARoadTile::OnOverlapOncommingBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	if (AAIWheeledVehiclePawn* aiCar = Cast<AAIWheeledVehiclePawn>(OtherActor))
-	{
-		if (aiCar->CurrentDriveDirection == DriveDirection::Forward)
-			AIVehicilesOnThisRoad.Add(aiCar);
-		else if (aiCar->CurrentDriveDirection == DriveDirection::Oncomming)
-			AIVehicilesOnThisRoad.Remove(aiCar);
-	}
-}
-
-void ARoadTile::OnOverlapSideBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	if (AAIWheeledVehiclePawn* aiCar = Cast<AAIWheeledVehiclePawn>(OtherActor))
-	{
-		AIVehicilesOnThisRoad.Add(aiCar);
-	}
-}
 
 
 void ARoadTile::GenerateAndDestroyRoad()
@@ -166,15 +157,5 @@ void ARoadTile::GenerateAndDestroyRoad()
 	if (RoadGenerator)
 		RoadGenerator->AddRoadTile();
 
-	FTimerHandle TimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]()
-		{
-			for (int i = 0; i < AIVehicilesOnThisRoad.Num(); i++)
-			{
-				if (AIVehicilesOnThisRoad[i] || AIVehicilesOnThisRoad[i]->CurrentCarStatus != CarStatus::Dead)
-					AIVehicilesOnThisRoad[i]->SetCurrentRoadTile(nullptr);
-
-			}
-			Destroy();
-		}, 20, false);
+	TimetoDestroy = true;
 }

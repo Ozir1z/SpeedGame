@@ -36,6 +36,13 @@ void AAIWheeledVehiclePawn::BeginPlay()
 	GetRandomCarTypeAndSetSpeed();
 }
 
+void AAIWheeledVehiclePawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	GetWorld()->GetTimerManager().ClearTimer(SwitchLaneTimerHandle);
+}
+
 void AAIWheeledVehiclePawn::Init(ARoadTile* currentRoadTile, DriveDirection direction)
 {
 	CurrentLane = direction == DriveDirection::Forward ? LaneStatus::ForwardRight : LaneStatus::OncomingRight;
@@ -76,10 +83,6 @@ void AAIWheeledVehiclePawn::Tick(float deltaSeconds)
 		return;
 	}
 
-	if (CurrentRoadTile && GetActorLocation().Z <= (CurrentRoadTile->GetActorLocation().Z - 300))
-		CurrentCarStatus = CarStatus::Dying;
-
-
 	if (CurrentCarStatus == CarStatus::Dead)
 		return; // this fool done
 
@@ -89,6 +92,9 @@ void AAIWheeledVehiclePawn::Tick(float deltaSeconds)
 		HandleVehicleGoingOffroad(deltaSeconds);
 		return; // we dont wanna do shit if there is no current road tile or if we are dying
 	}
+
+	if (GetActorLocation().Z <= (CurrentRoadTile->GetActorLocation().Z - 300))
+		CurrentCarStatus = CarStatus::Dying;
 
 	SlowdownBehindVehicleAndChangeLane(deltaSeconds);
 	DriveInLane(deltaSeconds);
@@ -236,9 +242,8 @@ void AAIWheeledVehiclePawn::SwitchLane()
 	HasrecentlySwitchedLanes = true;	
 	SteerAmount = 0.1f;
 
-	FTimerHandle TimerHandle;
 	float randomTimeToSwitch = rand() % 20 + 10; // between 10-20 seconds
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]()
+	GetWorld()->GetTimerManager().SetTimer(SwitchLaneTimerHandle, [&]()
 		{
 			HasrecentlySwitchedLanes = false;
 		}, randomTimeToSwitch, false); // 5 seconds make variable?
@@ -304,8 +309,5 @@ void AAIWheeledVehiclePawn::SetCurrentRoadTile(ARoadTile* roadTile)
 	if (roadTile)
 		CurrentRoadTile = roadTile;
 	else
-	{
 		CurrentRoadTile = nullptr;
-		CurrentCarStatus = CarStatus::Dying;
-	}
 }
