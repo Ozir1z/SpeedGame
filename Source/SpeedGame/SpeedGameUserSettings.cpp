@@ -7,11 +7,18 @@
 USpeedGameUserSettings::USpeedGameUserSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	// default volume settings
 	MasterVolume = 1.0f;
 	MusicVolume =1.f;
 	SFXVolume = 1.f;
+
+	// default color settings
 	RoadColor = FLinearColor::Red;
 	SkyColor = FLinearColor::White;
+
+	// default camera settings
+	CameraSensitivity = 1;
+	InvertedCameraSettings = FInvertedCameraSettings(false, false);
 }
 
 
@@ -47,4 +54,14 @@ void USpeedGameUserSettings::SetColorForSurfaceType(SurfaceType surfaceType, FLi
 			SkyColor = newColor;
 			break;
 	}
+}
+
+void USpeedGameUserSettings::SetCameraSensitivitySettings(float sensitivity)
+{
+	CameraSensitivity = sensitivity;
+}
+
+void USpeedGameUserSettings::SetCameraInvetedSettings(FInvertedCameraSettings invertedSettings)
+{
+	InvertedCameraSettings = invertedSettings;
 }
