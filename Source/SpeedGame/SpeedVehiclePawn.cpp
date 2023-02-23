@@ -13,6 +13,7 @@
 #include "SpeedGameGameModeBase.h"
 #include <Kismet/KismetStringLibrary.h>
 #include "RoadTile.h"
+#include "SpeedGameUserSettings.h"
 
 ASpeedVehiclePawn::ASpeedVehiclePawn()
 {
@@ -63,9 +64,14 @@ void ASpeedVehiclePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		{
 			PlayerEnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASpeedVehiclePawn::Look);
 		}
-		if (CameraAction)
+		if (CameraZoomAction)
 		{
-			PlayerEnhancedInputComponent->BindAction(CameraAction, ETriggerEvent::Started, this, &ASpeedVehiclePawn::CameraDistance);
+			PlayerEnhancedInputComponent->BindAction(CameraZoomAction, ETriggerEvent::Started, this, &ASpeedVehiclePawn::CameraDistance);
+		}		
+		if (LookBehindAction)
+		{
+			PlayerEnhancedInputComponent->BindAction(LookBehindAction, ETriggerEvent::Triggered, this, &ASpeedVehiclePawn::LookBehind);
+			PlayerEnhancedInputComponent->BindAction(LookBehindAction, ETriggerEvent::Completed, this, &ASpeedVehiclePawn::LookBehind);
 		}
 	}	
 }
@@ -121,12 +127,7 @@ void ASpeedVehiclePawn::Tick(float DeltaTime)
 	}
 
 	HandleVehicleSpeed();
-	
-	TimePassedSinceCameraInput += DeltaTime;
-	if (TimePassedSinceCameraInput > 1.5f && CurrentBombStatus != BombStatus::Explodeded && CurrentCameraStatus == CameraStatus::Manual)
-		SwitchCameraStatusTo(CameraStatus::Follow);
-	if(CurrentBombStatus == BombStatus::Explodeded)
-		SwitchCameraStatusTo(CameraStatus::Manual);
+	HandleCamera(DeltaTime);
 }
 
 void ASpeedVehiclePawn::HandleVehicleSpeed()
@@ -157,6 +158,29 @@ void ASpeedVehiclePawn::HandleVehicleSpeed()
 	}
 }
 
+void ASpeedVehiclePawn::HandleCamera(float deltaTime)
+{
+	if (CurrentCameraStatus == CameraStatus::Follow)
+		GetController()->ClientSetRotation(CameraArmComp->GetComponentRotation());
+
+	TimePassedSinceCameraInput += deltaTime;
+	if (TimePassedSinceCameraInput > 1.5f && CurrentBombStatus != BombStatus::Explodeded && CurrentCameraStatus == CameraStatus::Manual)
+		SwitchCameraStatusTo(CameraStatus::Follow);
+
+	if (CurrentBombStatus == BombStatus::Explodeded)
+		SwitchCameraStatusTo(CameraStatus::Manual);
+
+
+	if (CurrentCameraStatus == CameraStatus::SnapToFollow)
+		TimerSnapToFollow += deltaTime;
+
+	if (CurrentCameraStatus == CameraStatus::SnapToFollow && TimerSnapToFollow > 0.2f)
+	{
+		TimerSnapToFollow = 0;
+		SwitchCameraStatusTo(CameraStatus::Follow);
+	}
+}
+
 void ASpeedVehiclePawn::Death()
 {
 	if (DeathParticle)
@@ -177,16 +201,15 @@ void ASpeedVehiclePawn::SwitchCameraStatusTo(CameraStatus newCameraStatus)
 	{
 		case CameraStatus::InMenu:
 			CameraArmComp->SetRelativeRotation(FRotator(-15, 0, 0));
-			GetController()->ClientSetRotation(CameraArmComp->GetComponentRotation());
 			CameraArmComp->bEnableCameraRotationLag = true;
 			CameraArmComp->bUsePawnControlRotation = false;
 			break;
 		case CameraStatus::Manual:
+			CameraArmComp->bEnableCameraRotationLag = true;
 			CameraArmComp->bUsePawnControlRotation = true;
 			break;
 		case CameraStatus::Follow:
 			CameraArmComp->SetRelativeRotation(FRotator(-15, 0, 0));
-			GetController()->ClientSetRotation(CameraArmComp->GetComponentRotation());
 			CameraArmComp->bEnableCameraRotationLag = true;
 			CameraArmComp->bUsePawnControlRotation = false;
 			break;
@@ -194,6 +217,14 @@ void ASpeedVehiclePawn::SwitchCameraStatusTo(CameraStatus newCameraStatus)
 			CameraArmComp->bEnableCameraRotationLag = false;
 			CameraArmComp->SetRelativeRotation(FRotator(0, 0, 0));
 			CameraArmComp->bUsePawnControlRotation = false;
+			break;
+		case CameraStatus::LookBack:
+			CameraArmComp->SetRelativeRotation(FRotator(-15, -180, 0));
+			CameraArmComp->bEnableCameraRotationLag = false;
+			CameraArmComp->bUsePawnControlRotation = false;
+			break;
+		case CameraStatus::SnapToFollow:
+			CameraArmComp->SetRelativeRotation(FRotator(-15, 0, 0));
 			break;
 	}
 }
@@ -246,8 +277,11 @@ void ASpeedVehiclePawn::HandBrake(const FInputActionInstance& ActionInstance)
 
 void ASpeedVehiclePawn::Look(const FInputActionInstance& ActionInstance)
 {
-	if (CurrentCameraStatus == CameraStatus::FirstPerson)
+	if (CurrentCameraStatus == CameraStatus::FirstPerson || CurrentCameraStatus == CameraStatus::LookBack || CurrentCameraStatus == CameraStatus::SnapToFollow)
 		return;
+
+	USpeedGameUserSettings* settings = USpeedGameUserSettings::GetSpeedGameUserSettings();
+
 
 	TimePassedSinceCameraInput = 0.f;
 	//if(CurrentCameraStatus != CameraStatus::InMenu)
@@ -255,8 +289,34 @@ void ASpeedVehiclePawn::Look(const FInputActionInstance& ActionInstance)
 
 	FVector2D LookVector = ActionInstance.GetValue().Get<FVector2D>();
 
-	AddControllerPitchInput((float)LookVector.Y * -1);
-	AddControllerYawInput((float)LookVector.X);
+	float sensitivityX = settings->GetCameraSensitivity() * (float)LookVector.X;
+	float sensitivityY = settings->GetCameraSensitivity() * (float)LookVector.Y;
+
+	float invertedX = settings->GetInvertedCameraSettings().X == true ? 1 : -1;
+	float invertedY = settings->GetInvertedCameraSettings().Y == true ? 1 : -1;
+
+	AddControllerPitchInput(invertedY * sensitivityY);
+	AddControllerYawInput(invertedX * sensitivityX);
+}
+
+void ASpeedVehiclePawn::LookBehind(const FInputActionInstance& ActionInstance)
+{
+	/*
+	 first person is kinda hacked in, I would add 2 fixed position to this class
+	 1 forward fp point
+	 1 backward fp point
+	 and switch to those if in FP mode and try to look behind
+	 for now, its just not supported
+	*/
+	if (CurrentCameraStatus == CameraStatus::FirstPerson)
+		return; 
+
+	bool isLookingBack = ActionInstance.GetValue().Get<bool>();
+
+	if(isLookingBack)
+		SwitchCameraStatusTo(CameraStatus::LookBack);
+	else
+		SwitchCameraStatusTo(CameraStatus::SnapToFollow);
 }
 
 void ASpeedVehiclePawn::CameraDistance(const FInputActionInstance& ActionInstance)
@@ -268,7 +328,7 @@ void ASpeedVehiclePawn::CameraDistance(const FInputActionInstance& ActionInstanc
 	}
 	else if (CurrentCameraStatus == CameraStatus::FirstPerson)
 	{
-		SwitchCameraStatusTo(CameraStatus::Follow);
+		SwitchCameraStatusTo(CameraStatus::SnapToFollow);
 		CameraArmComp->TargetArmLength = 1500.f;
 	}
 	else

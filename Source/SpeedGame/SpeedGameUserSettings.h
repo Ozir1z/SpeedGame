@@ -39,9 +39,9 @@ public:
 		y = Y;
 	}
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "InvertedCamera Struct")
 	bool X;
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "InvertedCamera Struct")
 	bool Y;
 };
 
@@ -93,7 +93,7 @@ public:
 	float GetCameraSensitivity() const { return CameraSensitivity; }
 
 	UFUNCTION(BlueprintPure, Category = SpeedGameSettings)
-	FInvertedCameraSettings GetInvertedCameraX() const { return InvertedCameraSettings; }
+	FInvertedCameraSettings GetInvertedCameraSettings() const { return InvertedCameraSettings; }
 
 protected:
 	UPROPERTY(config)

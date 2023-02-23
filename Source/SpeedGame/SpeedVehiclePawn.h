@@ -13,7 +13,9 @@ enum class CameraStatus : uint8
 	Follow UMETA(DisplayName = "Follow"),
 	Manual UMETA(DisplayName = "Manual"),
 	FirstPerson UMETA(DisplayName = "FirstPerson"),
-	InMenu UMETA(DisplayName = "InMenu")
+	InMenu UMETA(DisplayName = "InMenu"),
+	LookBack UMETA(DisplayName = "LookBack"),
+	SnapToFollow UMETA(DisplayName = "SnapToFollow")
 };
 
 UENUM(BlueprintType)
@@ -95,7 +97,10 @@ protected:
 	UInputAction* LookAction;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Controls|Input Actions")
-	UInputAction* CameraAction;
+	UInputAction* CameraZoomAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Controls|Input Actions")
+	UInputAction* LookBehindAction;
 
 	// INPUT MAPPING //
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, category = "Controls|Input Mappings")
@@ -113,15 +118,18 @@ protected:
 	void Brake(const FInputActionInstance& ActionInstance);
 	void HandBrake(const FInputActionInstance& ActionInstance);
 	void Look(const FInputActionInstance& ActionInstance);
+	void LookBehind(const FInputActionInstance& ActionInstance);
 	void CameraDistance(const FInputActionInstance& ActionInstance);
 
 #pragma endregion
 
 private:
 	void HandleVehicleSpeed();
+	void HandleCamera(float deltaTime);
 	void Death();
 	int GameSpeed = 50;
 	float TimePassedSinceCameraInput = 0.f;
+	float TimerSnapToFollow = 0.f;
 	FVector PlayerStartLocation;
 	FRotator PlayerStartRotation;
 };
