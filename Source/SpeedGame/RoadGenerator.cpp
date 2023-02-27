@@ -4,12 +4,15 @@
 #include "RoadTile.h"
 #include "AIWheeledVehiclePawn.h"
 #include "Components/ArrowComponent.h"
+#include "SpeedGameGameModeBase.h"
+#include "SpeedGameUserSettings.h"
 
 URoadGenerator::URoadGenerator()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
 	FirstSpawnPoint = CreateDefaultSubobject<UArrowComponent>(TEXT("FirstSpawnPoint"));
+	TrialTrackStartPoint = CreateDefaultSubobject<UArrowComponent>(TEXT("TrialTrackStartPoint"));
 }
 
 void URoadGenerator::BeginPlay()
@@ -22,24 +25,9 @@ void URoadGenerator::BeginPlay()
 		UE_LOG(LogTemp, Display, TEXT("AICarBP or RoadTileBPs are not set in RoadGenerator blueprint"));
 		return;
 	}
-
-	if (IsDebugTrack)
-	{
-		GenerateDebugTrack();
-		return;
-	}
-
-	if (!GenerateInitialRoad)
-		return;
-
-	if (SpawnOneCarDebug)
-		SpawnOneCarDebugCompleted = false;
-
-	NextSpawnPointData = FAttachPointData{
-		FirstSpawnPoint->GetComponentLocation(),
-		FirstSpawnPoint->GetComponentQuat().Rotator()
-	};
-
+	
+	FirstSpawnPoint->SetRelativeLocation(FVector(3000, 0, 0));
+	TrialTrackStartPoint->SetRelativeLocationAndRotation(FVector(0, 3000, 0), FRotator(0,90,0));
 
 	RoadTilesTopCollection.Add(RoadTileBPSlopeTop);
 	RoadTilesTopCollection.Add(RoadTileBPStraight);
@@ -47,15 +35,24 @@ void URoadGenerator::BeginPlay()
 	RoadTilesBotCollection.Add(RoadTileBPSlopeBot);
 	RoadTilesBotCollection.Add(RoadTileBPStraight);
 
-	RoadTilesStriaghtCollection.Add(RoadTileBPSlopeBot);
-	RoadTilesStriaghtCollection.Add(RoadTileBPStraight);
-	RoadTilesStriaghtCollection.Add(RoadTileBPCornerLeft);
-	RoadTilesStriaghtCollection.Add(RoadTileBPCornerRight);
+	RoadTilesStraightCollection.Add(RoadTileBPSlopeBot);
+	RoadTilesStraightCollection.Add(RoadTileBPStraight);
+	RoadTilesStraightCollection.Add(RoadTileBPCornerLeft);
+	RoadTilesStraightCollection.Add(RoadTileBPCornerRight);
+}
 
-	for (int i = 0; i < AmountOfRoadPiecesAhead; i++)
+void URoadGenerator::Init()
+{
+	NextSpawnPointData = FAttachPointData{
+		FirstSpawnPoint->GetComponentLocation(),
+		FirstSpawnPoint->GetComponentQuat().Rotator()
+	};
+	DeleteTrialTrack();
+	for (int i = 0; i < (AmountOfRoadPiecesAhead + InitialStraight); i++)
 	{
 		AddRoadTile();
 	}
+
 }
 
 void URoadGenerator::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -67,7 +64,15 @@ void URoadGenerator::AddRoadTile()
 {
 	FRotator rotatorAdjustment = NextSpawnPointData.Rotator;
 	TSubclassOf<ARoadTile> roadTileBPToSpawn = RoadTileBPStraight;
-	// make a hill
+
+	
+	if (InitialStraight > 0)
+	{
+		SpawnNextRoadTile(rotatorAdjustment, roadTileBPToSpawn);
+		InitialStraight--;
+		return;
+	}
+
 	if (LastRoadTileType == RoadTileType::SlopeBottom && CurrentHillStatus == HillStatus::None)
 	{
 		CurrentHillStatus = HillStatus::StartBot;
@@ -79,9 +84,7 @@ void URoadGenerator::AddRoadTile()
 		roadTileBPToSpawn = RoadTilesTopCollection[randomIndex];
 
 		if (roadTileBPToSpawn.GetDefaultObject()->GetRoadTileType() == RoadTileType::SlopeTop)
-		{
 			CurrentHillStatus = HillStatus::StartTop;
-		}
 	}
 	else if (CurrentHillStatus == HillStatus::StartTop)
 	{
@@ -91,10 +94,7 @@ void URoadGenerator::AddRoadTile()
 		rotatorAdjustment = FRotator(0, NextSpawnPointData.Rotator.Yaw, NextSpawnPointData.Rotator.Roll);
 
 		if (roadTileBPToSpawn.GetDefaultObject()->GetRoadTileType() == RoadTileType::SlopeTop)
-		{
 			CurrentHillStatus = HillStatus::EndTop;
-
-		}
 	}
 	else if (CurrentHillStatus == HillStatus::EndTop)
 	{
@@ -104,155 +104,176 @@ void URoadGenerator::AddRoadTile()
 		rotatorAdjustment = FRotator(-4, NextSpawnPointData.Rotator.Yaw, NextSpawnPointData.Rotator.Roll);
 
 		if (roadTileBPToSpawn.GetDefaultObject()->GetRoadTileType() == RoadTileType::SlopeBottom)
-		{
 			CurrentHillStatus = HillStatus::EndBot;
-		}
 	}
 	else if (CurrentHillStatus == HillStatus::EndBot)
-	{
 		CurrentHillStatus = HillStatus::None;
-	}
 
-	// done with hill?
 	if (CurrentHillStatus == HillStatus::None)
 	{
-		int randomIndex = randomIndex = rand() % RoadTilesStriaghtCollection.Num();
-		roadTileBPToSpawn = RoadTilesStriaghtCollection[randomIndex];
-		roadTileBPToSpawn = RoadTilesStriaghtCollection[randomIndex];
+		int randomIndex = randomIndex = rand() % RoadTilesStraightCollection.Num();
+
 		// make possibly bigger corners than 1 tile
-		if ((roadTileBPToSpawn.GetDefaultObject()->GetRoadTileType() == RoadTileType::CornerLeft ||
-			roadTileBPToSpawn.GetDefaultObject()->GetRoadTileType() == RoadTileType::CornerRight &&
-			CornersLeft > 0))
+		if ((LastRoadTileType == RoadTileType::CornerLeft ||
+			LastRoadTileType == RoadTileType::CornerRight) &&
+			CornersLeft > 0)
 		{
-			if(CornersLeft == 0)
-				CornersLeft = rand() % 5;
-
+			roadTileBPToSpawn = LastRoadTileType == RoadTileType::CornerLeft ? RoadTileBPCornerLeft : RoadTileBPCornerRight;
 			CornersLeft--;
-
 		} 	
-		else//we want a straight unril count is 0
+		else if (LastRoadTileType == RoadTileType::Straight
+			&& StraightLeftsUntilOther > 0)
 		{
-			if (LastRoadTileType != RoadTileType::Straight || StraightLeftsUntilCorner > 0)
-				roadTileBPToSpawn = RoadTileBPStraight;
-			// if count is finally 0 then reset it to original amount of srtiaghts 
-			// we can now do corners again if lastRoadTileType was not striaght
-			if (StraightLeftsUntilCorner == 0)
-				StraightLeftsUntilCorner = AmountOfStraightsUntilCorner;
-			// if the last one was striaght lower the straightsLeft
-			if (LastRoadTileType == RoadTileType::Straight)
-				StraightLeftsUntilCorner--;
+			roadTileBPToSpawn = RoadTileBPStraight;
+			StraightLeftsUntilOther--;
+		}
+
+		if (StraightLeftsUntilOther == 0)
+		{
+			StraightLeftsUntilOther = AmountOfStraightsUntilOther;
+			roadTileBPToSpawn = RoadTilesStraightCollection[randomIndex];
+		}
+
+		if (CornersLeft == 0)
+		{
+			roadTileBPToSpawn = RoadTileBPStraight;
+			CornersLeft = rand() % 5;
 		}
 	}
 
 	SpawnNextRoadTile(rotatorAdjustment, roadTileBPToSpawn);
 }
 
-void URoadGenerator::SpawnNextRoadTile(FRotator& rotatorAdjustment, TSubclassOf<ARoadTile>& roadTileBPToSpawn)
+void URoadGenerator::SpawnNextRoadTile(FRotator& rotatorAdjustment, TSubclassOf<ARoadTile>& roadTileBPToSpawn, bool isTrialTrack)
 {
 	ARoadTile* nextRoadTile = GetWorld()->SpawnActor<ARoadTile>(roadTileBPToSpawn, NextSpawnPointData.Location, rotatorAdjustment);
-	nextRoadTile->Init(this);
 
-	if (CurrentRoadTile)
-		CurrentRoadTile->NextTile = nextRoadTile;
+	USpeedGameUserSettings* settings = USpeedGameUserSettings::GetSpeedGameUserSettings();
+	if (!settings)
+		return;
 
-	nextRoadTile->PerviousTile = CurrentRoadTile;
-
+	nextRoadTile->Init(this, settings->GetRoadColor());
+	nextRoadTile->IsTrialtrack = isTrialTrack;
 	LastRoadTileType = nextRoadTile->GetRoadTileType();
 	NextSpawnPointData = nextRoadTile->GetAttachPointData();
 
-	CurrentRoadTile = nextRoadTile;
-
-	if ((SpawnOneCarDebug && !SpawnOneCarDebugCompleted))
+	if (isTrialTrack)
 	{
-		SpawnOneCarDebugCompleted = true;
-		SpawnAI();
-	}
+		if (TrialTrackRoadtile)
+			TrialTrackRoadtile->NextTile = nextRoadTile;
+
+		nextRoadTile->PreviousTile = TrialTrackRoadtile;
+		TrialTrackRoadtile = nextRoadTile;
+	}	
 	else
 	{
-		int chance = rand() % 2;  // CHANCE TO SPAWN CAR ON A TILE
-		if(chance == 0)
-			SpawnAI();
+		if (CurrentRoadTile)
+			CurrentRoadTile->NextTile = nextRoadTile;
+
+		nextRoadTile->PreviousTile = CurrentRoadTile;
+		CurrentRoadTile = nextRoadTile;
 	}
+		
+
+	int chance = rand() % 2;  // CHANCE TO SPAWN CAR ON A TILE
+	if (chance == 0 && (InitialStraight <= 0 || isTrialTrack))
+		nextRoadTile->SpawnCar(AICarBP);
 }
 
-void URoadGenerator::SpawnAI()
-{
-	int leftOrRight = rand() & 1;
-	AAIWheeledVehiclePawn* aiVehicle;
-	if (leftOrRight == 0)
-	{
-		aiVehicle = GetWorld()->SpawnActor<AAIWheeledVehiclePawn>(AICarBP, CurrentRoadTile->GetForwardSpawnPoint()->GetComponentLocation(), CurrentRoadTile->GetForwardSpawnPoint()->GetComponentRotation());
-		aiVehicle->CurrentLane = LaneStatus::ForwardRight;
-	}
-	else 
-	{
-		aiVehicle = GetWorld()->SpawnActor<AAIWheeledVehiclePawn>(AICarBP, CurrentRoadTile->GetOncommingSpawnPoint()->GetComponentLocation(), CurrentRoadTile->GetOncommingSpawnPoint()->GetComponentRotation());
-		aiVehicle->CurrentLane = LaneStatus::OncomingRight;
-		//SetActorRotation(FQuat(0, 0, 180, 0), ETeleportType::TeleportPhysics);
-	}
 
-	aiVehicle->SetCurrentRoad(CurrentRoadTile); // FIX THIS
-	
-	if (SpawnOneCarDebug)
-		GetWorld()->GetFirstPlayerController()->Possess(aiVehicle);
-}
-
-//Only for debugging AI - only called when IsDebugTrack = true
-void URoadGenerator::GenerateDebugTrack()
+void URoadGenerator::GenerateTrialTrack()
 {
-	ARoadTile* firstRoadTile = nullptr;
-	for (int i = 0; i < 10; i++)
+	ARoadTile* firstTrialTrackTile = nullptr;
+
+	NextSpawnPointData = FAttachPointData{
+		TrialTrackStartPoint->GetComponentLocation(),
+		TrialTrackStartPoint->GetComponentQuat().Rotator()
+	};
+	for (int i = 0; i < 7; i++)
 	{
-		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPStraight);
-		if (!firstRoadTile)
-			firstRoadTile = CurrentRoadTile;
+		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPStraight, true);		
+		if(!firstTrialTrackTile)
+			firstTrialTrackTile = TrialTrackRoadtile;
 	}	
 	for (int i = 0; i < 12; i++)
 	{
-		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPCornerRight);
+		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPCornerRight, true);
 	}	
 	for (int i = 0; i < 2; i++)
 	{
-		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPSlopeBot);
+		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPSlopeBot, true);
 	}
-	SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPStraight);
+	SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPStraight, true);
 	for (int i = 0; i < 2; i++)
 	{
-		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPSlopeTop);
+		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPSlopeTop, true);
 	}
 
 	double rotatorAdjustmentYaw = 0.f;
 	for (int i = 0; i < 2; i++)
 	{
 		FRotator rotatorAdjustment = FRotator(rotatorAdjustmentYaw, NextSpawnPointData.Rotator.Yaw, NextSpawnPointData.Rotator.Roll);
-		SpawnNextRoadTile(rotatorAdjustment, RoadTileBPSlopeTop);
+		SpawnNextRoadTile(rotatorAdjustment, RoadTileBPSlopeTop, true);
 		rotatorAdjustmentYaw -= 4;
 	}
-	SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPStraight);
+	SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPStraight, true);
 	for (int i = 0; i < 2; i++)
 	{
-		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPSlopeBot);
+		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPSlopeBot, true);
 	}
 	for (int i = 0; i < 2; i++)
 	{
-		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPCornerLeft);
+		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPCornerLeft, true);
 	}
 	for (int i = 0; i < 14; i++)
 	{
-		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPCornerRight);
+		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPCornerRight, true);
 	}
 	for (int i = 0; i < 2; i++)
 	{
-		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPCornerLeft);
+		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPCornerLeft, true);
 	}	
 	for (int i = 0; i < 2; i++)
 	{
-		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPCornerRight);
+		SpawnNextRoadTile(NextSpawnPointData.Rotator, RoadTileBPCornerRight, true);
 	}
 
-	//make it a loop
-	CurrentRoadTile->NextTile = firstRoadTile;
-	firstRoadTile->PerviousTile = CurrentRoadTile;
+	TrialTrackRoadtile->NextTile = firstTrialTrackTile;
+	firstTrialTrackTile->PreviousTile = TrialTrackRoadtile;
 }
 
 
+void URoadGenerator::DeleteTrialTrack()
+{
+	if (!TrialTrackRoadtile)
+		return;
+
+	ARoadTile* firstTile = TrialTrackRoadtile;
+	bool doneFirst = false;
+
+	while (TrialTrackRoadtile != firstTile || !doneFirst)
+	{
+		doneFirst = true;
+		TrialTrackRoadtile->Destroy();
+		TrialTrackRoadtile = TrialTrackRoadtile->NextTile;
+		TrialTrackRoadtile->PreviousTile = nullptr;
+	}
+	TrialTrackRoadtile = nullptr;
+}
+
+void URoadGenerator::UpdateTrialTrack(FLinearColor newColor)
+{
+	if (!TrialTrackRoadtile)
+		return;
+
+	ARoadTile* firstTile = TrialTrackRoadtile;
+	bool doneFirst = false;
+
+	while (TrialTrackRoadtile != firstTile || !doneFirst)
+	{
+		doneFirst = true;
+		TrialTrackRoadtile->Init(this, newColor);
+		TrialTrackRoadtile = TrialTrackRoadtile->NextTile;
+	}
+	TrialTrackRoadtile = firstTile;
+}

@@ -35,8 +35,15 @@
 			"Enabled": true
 		},
 		{
-			"Name": "RawInput",
+			"Name": "NiagaraFluids",
 			"Enabled": true
+		},
+		{
+			"Name": "WinDualShock",
+			"Enabled": true,
+			"SupportedTargetPlatforms": [
+				"Win64"
+			]
 		}
 	]
 }

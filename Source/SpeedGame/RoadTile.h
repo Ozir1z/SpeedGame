@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "AIWheeledVehiclePawn.h"
 #include "RoadTile.generated.h"
 
 UENUM(BlueprintType)
@@ -25,17 +24,19 @@ class SPEEDGAME_API ARoadTile : public AActor
 	
 public:	
 	ARoadTile();
-	virtual void Tick(float DeltaTime) override;
 	
-	void Init(class URoadGenerator* roadGenerator);
+	bool IsTrialtrack = false;
+	void Init(class URoadGenerator* roadGenerator, FLinearColor color);
+	void SpawnCar(TSubclassOf<class AAIWheeledVehiclePawn> aiCarBP);
 
 	FAttachPointData GetAttachPointData();
 	RoadTileType GetRoadTileType();
 	
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SpeedGame | tiles")
 	ARoadTile* NextTile = nullptr;
-	UPROPERTY()
-	ARoadTile* PerviousTile = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SpeedGame | tiles")
+	ARoadTile* PreviousTile = nullptr;
 
 	class UArrowComponent* GetForwardSpawnPoint();
 	class UArrowComponent* GetOncommingSpawnPoint();
@@ -52,13 +53,23 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "SpeedGame | lanes")
 	class USplineComponent* OncommingRightLane;
 
+	static const FName ForwardTriggerName;
+	static const FName OncommingTriggerName;
+	static const FName LeftSideTriggerName;
+	static const FName RightSideTriggerName;
+
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float deltaSeconds) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	UPROPERTY(VisibleAnywhere, Category = "SpeedGame | Material")
+	UMaterialInterface* Material;
 
 	UPROPERTY(EditAnywhere)
-	class USphereComponent* CustomRootComponent;
+	class USceneComponent* CustomRootComponent;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* RoadMeshComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -76,19 +87,26 @@ protected:
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* OncommingTriggerBox;
 
+	UPROPERTY(EditDefaultsOnly)
+	class UBoxComponent* LeftSideTriggerBox;
+
+	UPROPERTY(EditDefaultsOnly)
+	class UBoxComponent* RightSideTriggerBox;
+
 	UFUNCTION()
 	void OnOverlapForwardBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	UFUNCTION()
-	void OnOverlapOncomingBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UPROPERTY(EditAnywhere, Category = "SpeedGame | RoadType")
 	RoadTileType RoadTileType = RoadTileType::None;
 
 private:
 	class URoadGenerator* RoadGenerator;
+	UMaterialInstanceDynamic* DynamicMaterial_RoadMesh;
 
 	void GenerateAndDestroyRoad();
-	void SetCurrentRoadTileForVehicleOrDestroy(class ARoadTile* roadTileToSet, class AAIWheeledVehiclePawn* aiVehicle, LaneStatus LeftLaneStatus,LaneStatus RightLaneStatus);
+
+	float DestroyTimer = 20;
+	bool TimetoDestroy = false;
 };
 
 USTRUCT(Atomic)
@@ -96,6 +114,18 @@ struct FAttachPointData
 {
 	GENERATED_USTRUCT_BODY()
 
+public:
+	FAttachPointData() 
+	{
+
+	}
+
+	FAttachPointData(FVector location, FRotator rotator)
+	{
+		Location = location;
+		Rotator = rotator;
+	}
+	
 	UPROPERTY()
 	FVector Location;
 	UPROPERTY()
